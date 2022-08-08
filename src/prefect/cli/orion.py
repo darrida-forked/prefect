@@ -61,7 +61,8 @@ def generate_welcome_blurb(base_url, ui_enabled: bool):
 
         View the API reference documentation at {docs_url}
         """
-    ).format(api_url=base_url + "/api", docs_url=base_url + "/docs")
+    ).format(api_url=f"{base_url}/api", docs_url=f"{base_url}/docs")
+
 
     visit_dashboard = textwrap.dedent(
         f"""
@@ -127,7 +128,7 @@ async def start(
                     "--factory",
                     "prefect.orion.api.server:create_app",
                     "--host",
-                    str(host),
+                    host,
                     "--port",
                     str(port),
                 ],
@@ -135,6 +136,7 @@ async def start(
                 stream_output=True,
             )
         )
+
 
         # Explicitly handle the interrupt signal here, as it will allow us to cleanly
         # stop the Orion uvicorn server with a SIGTERM.  Failing to do that may cause

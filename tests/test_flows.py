@@ -1121,8 +1121,8 @@ class TestFlowRunLogs:
         flow_run_id = state.state_details.flow_run_id
 
         logs = await orion_client.read_logs()
-        assert all([log.flow_run_id == flow_run_id for log in logs])
-        assert all([log.task_run_id is None for log in logs])
+        assert all(log.flow_run_id == flow_run_id for log in logs)
+        assert all(log.task_run_id is None for log in logs)
 
 
 @pytest.mark.enable_orion_handler
@@ -1145,7 +1145,7 @@ class TestSubflowRunLogs:
 
         logs = await orion_client.read_logs()
         log_messages = [log.message for log in logs]
-        assert all([log.task_run_id is None for log in logs])
+        assert all(log.task_run_id is None for log in logs)
         assert "Hello world!" in log_messages, "Parent log message is present"
         assert (
             logs[log_messages.index("Hello world!")].flow_run_id == flow_run_id
@@ -1180,7 +1180,7 @@ class TestSubflowRunLogs:
         logs = await orion_client.read_logs()
         log_messages = [log.message for log in logs]
         task_run_logs = [log for log in logs if log.task_run_id is not None]
-        assert all([log.flow_run_id == subflow_run_id for log in task_run_logs])
+        assert all(log.flow_run_id == subflow_run_id for log in task_run_logs)
         assert "Hello smaller world!" in log_messages
         assert (
             logs[log_messages.index("Hello smaller world!")].flow_run_id

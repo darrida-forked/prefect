@@ -79,7 +79,7 @@ def load_deployments_from_yaml(
 class DeploymentYAML(BaseModel):
     @property
     def editable_fields(self) -> List[str]:
-        editable_fields = [
+        return [
             "name",
             "description",
             "version",
@@ -88,7 +88,6 @@ class DeploymentYAML(BaseModel):
             "schedule",
             "infrastructure",
         ]
-        return editable_fields
 
     @property
     def header(self) -> str:

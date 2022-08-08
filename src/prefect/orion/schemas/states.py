@@ -62,13 +62,11 @@ class State(IDBaseModel, Generic[R]):
     state_details: StateDetails = Field(default_factory=StateDetails)
 
     @overload
-    def result(state_or_future: "State[R]", raise_on_failure: bool = True) -> R:
+    def result(self, raise_on_failure: bool = True) -> R:
         ...
 
     @overload
-    def result(
-        state_or_future: "State[R]", raise_on_failure: bool = False
-    ) -> Union[R, Exception]:
+    def result(self, raise_on_failure: bool = False) -> Union[R, Exception]:
         ...
 
     def result(self, raise_on_failure: bool = True):
@@ -128,11 +126,7 @@ class State(IDBaseModel, Generic[R]):
             >>> print(result)
             ValueError("oh no!")
         """
-        data = None
-
-        if self.data:
-            data = self.data.decode()
-
+        data = self.data.decode() if self.data else None
         # Link the result to this state for dependency tracking
         # Performing this here lets us capture relationships for futures resolved into
         # data
@@ -152,7 +146,7 @@ class State(IDBaseModel, Generic[R]):
             elif isinstance(data, State):
                 data.result()
             elif isinstance(data, Iterable) and all(
-                [isinstance(o, State) for o in data]
+                isinstance(o, State) for o in data
             ):
                 # raise the first failure we find
                 for state in data:

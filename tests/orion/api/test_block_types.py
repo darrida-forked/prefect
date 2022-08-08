@@ -400,7 +400,7 @@ class TestReadBlockDocumentsForBlockType:
         ]
 
     async def test_read_block_documents_for_nonexistent_block_type(self, client):
-        response = await client.get(f"/block_types/slug/nonsense/block_documents")
+        response = await client.get("/block_types/slug/nonsense/block_documents")
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
 

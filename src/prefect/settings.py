@@ -154,20 +154,14 @@ def debug_mode_log_level(settings, value):
     `value_callback` for `PREFECT_LOGGING_LEVEL` that overrides the log level to DEBUG
     when debug mode is enabled.
     """
-    if PREFECT_DEBUG_MODE.value_from(settings):
-        return "DEBUG"
-    else:
-        return value
+    return "DEBUG" if PREFECT_DEBUG_MODE.value_from(settings) else value
 
 
 def only_return_value_in_test_mode(settings, value):
     """
     `value_callback` for `PREFECT_TEST_SETTING` that only allows access during test mode
     """
-    if PREFECT_TEST_MODE.value_from(settings):
-        return value
-    else:
-        return None
+    return value if PREFECT_TEST_MODE.value_from(settings) else None
 
 
 def default_ui_api_url(settings, value):
@@ -339,10 +333,11 @@ PREFECT_LOGGING_SERVER_LEVEL = Setting(
 PREFECT_LOGGING_SETTINGS_PATH = Setting(
     Path,
     default=Path("${PREFECT_HOME}") / "logging.yml",
-    description=f"""The path to a custom YAML logging configuration file. If
+    description="""The path to a custom YAML logging configuration file. If
     no file is found, the default `logging.yml` is used. Defaults to a logging.yml in the Prefect home directory.""",
     value_callback=template_with_settings(PREFECT_HOME),
 )
+
 
 PREFECT_LOGGING_EXTRA_LOGGERS = Setting(
     str,
@@ -913,9 +908,7 @@ class ProfilesCollection:
         """
         Retrieve the active profile in this collection.
         """
-        if self.active_name is None:
-            return None
-        return self[self.active_name]
+        return None if self.active_name is None else self[self.active_name]
 
     def set_active(self, name: Optional[str], check: bool = True):
         """
@@ -1021,12 +1014,13 @@ class ProfilesCollection:
         return self.profiles_by_name.__iter__()
 
     def __eq__(self, __o: object) -> bool:
-        if not isinstance(__o, ProfilesCollection):
-            return False
-
         return (
-            self.profiles_by_name == __o.profiles_by_name
-            and self.active_name == __o.active_name
+            (
+                self.profiles_by_name == __o.profiles_by_name
+                and self.active_name == __o.active_name
+            )
+            if isinstance(__o, ProfilesCollection)
+            else False
         )
 
     def __repr__(self) -> str:

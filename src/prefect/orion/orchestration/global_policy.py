@@ -112,10 +112,12 @@ class SetEndTime(BaseUniversalTransform):
             context.run.end_time = None
 
         # if entering a final state...
-        if context.proposed_state.is_final():
-            # if the run has a start time and no end time, give it one
-            if context.run.start_time and not context.run.end_time:
-                context.run.end_time = context.proposed_state.timestamp
+        if (
+            context.proposed_state.is_final()
+            and context.run.start_time
+            and not context.run.end_time
+        ):
+            context.run.end_time = context.proposed_state.timestamp
 
 
 class IncrementRunTime(BaseUniversalTransform):

@@ -84,7 +84,7 @@ async def test_container_name_includes_index_on_conflict(
 
     if collision_count:
         # Add the basic name first
-        existing_names = [f"test-name"]
+        existing_names = ["test-name"]
         for i in range(1, collision_count):
             existing_names.append(f"test-name-{i}")
     else:
@@ -104,8 +104,9 @@ async def test_container_name_includes_index_on_conflict(
     assert mock_docker_client.containers.create.call_count == collision_count + 1
     call_name = mock_docker_client.containers.create.call_args[1].get("name")
     expected_name = (
-        "test-name" if not collision_count else f"test-name-{collision_count}"
+        f"test-name-{collision_count}" if collision_count else "test-name"
     )
+
     assert call_name == expected_name
 
 
@@ -456,13 +457,7 @@ async def test_warns_if_docker_version_does_not_support_host_gateway_on_linux(
 
     mock_docker_client.version.return_value = {"Version": "19.1.1"}
 
-    with pytest.warns(
-        UserWarning,
-        match=(
-            "`host.docker.internal` could not be automatically resolved.*"
-            f"feature is not supported on Docker Engine v19.1.1"
-        ),
-    ):
+    with pytest.warns(UserWarning, match='`host.docker.internal` could not be automatically resolved.*feature is not supported on Docker Engine v19.1.1'):
         await DockerContainer(
             env={"PREFECT_API_URL": explicit_api_url} if explicit_api_url else {}
         ).run()
@@ -562,4 +557,4 @@ async def test_container_name_collision(docker: "DockerClient"):
 
     result = await container.run()
     created_container: "Container" = docker.containers.get(result.identifier)
-    assert created_container.name == base_name + "-1"
+    assert created_container.name == f"{base_name}-1"

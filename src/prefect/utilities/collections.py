@@ -53,8 +53,8 @@ class AutoEnum(str, Enum):
         ```
     """
 
-    def _generate_next_value_(name, start, count, last_values):
-        return name
+    def _generate_next_value_(self, start, count, last_values):
+        return self
 
     @staticmethod
     def auto():
@@ -130,7 +130,7 @@ T = TypeVar("T")
 
 
 def ensure_iterable(obj: Union[T, Iterable[T]]) -> Iterable[T]:
-    if isinstance(obj, Sequence) or isinstance(obj, Set):
+    if isinstance(obj, (Sequence, Set)):
         return obj
     obj = cast(T, obj)  # No longer in the iterable case
     return [obj]
@@ -166,10 +166,7 @@ def extract_instances(
             if isinstance(o, type_):
                 ret[type_].append(o)
 
-    if len(types) == 1:
-        return ret[types[0]]
-
-    return ret
+    return ret[types[0]] if len(types) == 1 else ret
 
 
 def batched_iterable(iterable: Iterable[T], size: int) -> Iterator[Tuple[T, ...]]:
@@ -185,10 +182,10 @@ def batched_iterable(iterable: Iterable[T], size: int) -> Iterator[Tuple[T, ...]
     """
     it = iter(iterable)
     while True:
-        batch = tuple(itertools.islice(it, size))
-        if not batch:
+        if batch := tuple(itertools.islice(it, size)):
+            yield batch
+        else:
             break
-        yield batch
 
 
 class Quote(Generic[T]):
@@ -348,13 +345,15 @@ def remove_nested_keys(keys_to_remove: List[Hashable], obj):
         `obj` without keys matching an entry in `keys_to_remove` if `obj` is a
         dictionary. `obj` if `obj` is not a dictionary.
     """
-    if not isinstance(obj, dict):
-        return obj
-    return {
-        key: remove_nested_keys(keys_to_remove, value)
-        for key, value in obj.items()
-        if key not in keys_to_remove
-    }
+    return (
+        {
+            key: remove_nested_keys(keys_to_remove, value)
+            for key, value in obj.items()
+            if key not in keys_to_remove
+        }
+        if isinstance(obj, dict)
+        else obj
+    )
 
 
 def distinct(

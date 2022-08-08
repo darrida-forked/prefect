@@ -111,7 +111,7 @@ class DockerContainer(Infrastructure):
     @validator("volumes")
     def check_volume_format(cls, volumes):
         for volume in volumes:
-            if not ":" in volume:
+            if ":" not in volume:
                 raise ValueError(
                     "Invalid volume specification. "
                     f"Expected format 'path:container_path', but got {volume!r}"
@@ -233,10 +233,7 @@ class DockerContainer(Infrastructure):
         if self.networks:
             return None
 
-        # Check for a local API connection
-        api_url = self.env.get("PREFECT_API_URL", PREFECT_API_URL.value())
-
-        if api_url:
+        if api_url := self.env.get("PREFECT_API_URL", PREFECT_API_URL.value()):
             try:
                 _, netloc, _, _, _, _ = urllib.parse.urlparse(api_url)
             except Exception as exc:
@@ -249,7 +246,7 @@ class DockerContainer(Infrastructure):
             host = netloc.split(":")[0]
 
             # If using a locally hosted API, use a host network on linux
-            if sys.platform == "linux" and (host == "127.0.0.1" or host == "localhost"):
+            if sys.platform == "linux" and host in ["127.0.0.1", "localhost"]:
                 return "host"
 
         # Default to unset
@@ -303,9 +300,7 @@ class DockerContainer(Infrastructure):
                 container = docker_client.containers.create(name=name, **kwargs)
             except APIError as exc:
                 if "Conflict" in str(exc) and "container name" in str(exc):
-                    self.logger.debug(
-                        f"Docker container name already exists; adding identifier..."
-                    )
+                    self.logger.debug("Docker container name already exists; adding identifier...")
                     index += 1
                     name = f"{original_name}-{index}"
                 else:
@@ -361,7 +356,7 @@ class DockerContainer(Infrastructure):
                 docker_client = docker.from_env()
 
         except docker.errors.DockerException as exc:
-            raise RuntimeError(f"Could not connect to Docker.") from exc
+            raise RuntimeError("Could not connect to Docker.") from exc
 
         return docker_client
 
@@ -371,25 +366,26 @@ class DockerContainer(Infrastructure):
         compatible.
         """
         # Must match `/?[a-zA-Z0-9][a-zA-Z0-9_.-]+` in the end
-        if not self.name:
-            return None
-
         return (
-            slugify(
-                self.name,
-                lowercase=False,
-                # Docker does not limit length but URL limits apply eventually so
-                # limit the length for safety
-                max_length=250,
-                # Docker allows these characters for container names
-                regex_pattern=r"[^a-zA-Z0-9_.-]+",
-            ).lstrip(
-                # Docker does not allow leading underscore, dash, or period
-                "_-."
+            (
+                slugify(
+                    self.name,
+                    lowercase=False,
+                    # Docker does not limit length but URL limits apply eventually so
+                    # limit the length for safety
+                    max_length=250,
+                    # Docker allows these characters for container names
+                    regex_pattern=r"[^a-zA-Z0-9_.-]+",
+                ).lstrip(
+                    # Docker does not allow leading underscore, dash, or period
+                    "_-."
+                )
+                # Docker does not allow 0 character names so cast to null if the name is
+                # empty after slufification
+                or None
             )
-            # Docker does not allow 0 character names so cast to null if the name is
-            # empty after slufification
-            or None
+            if self.name
+            else None
         )
 
     def _get_extra_hosts(self, docker_client) -> Dict[str, str]:

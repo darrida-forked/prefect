@@ -1410,7 +1410,7 @@ class TestTaskInputs:
             x=[TaskRunResult(id=upstream_state.state_details.task_run_id)],
         )
 
-    @pytest.mark.parametrize("result", [["Fred"], {"one": 1}, {1, 2, 2}, (1, 2)])
+    @pytest.mark.parametrize("result", [["Fred"], {"one": 1}, {1, 2}, (1, 2)])
     async def test_task_inputs_populated_with_collection_result_upstream(
         self, result, orion_client, flow_with_upstream_downstream
     ):
@@ -1599,10 +1599,10 @@ class TestTaskRunLogs:
 
         logs = await orion_client.read_logs()
         assert logs, "There should be logs"
-        assert all([log.flow_run_id == flow_run_id for log in logs])
+        assert all(log.flow_run_id == flow_run_id for log in logs)
         task_run_logs = [log for log in logs if log.task_run_id is not None]
         assert task_run_logs, f"There should be task run logs in {logs}"
-        assert all([log.task_run_id == task_run_id for log in task_run_logs])
+        assert all(log.task_run_id == task_run_id for log in task_run_logs)
 
 
 class TestTaskWithOptions:
@@ -1737,12 +1737,12 @@ class TestTaskRegistration:
 
 class TestTaskMap:
     @task
-    async def add_one(x):
-        return x + 1
+    async def add_one(self):
+        return self + 1
 
     @task
-    def add_together(x, y):
-        return x + y
+    def add_together(self, y):
+        return self + y
 
     def test_simple_map(self):
         @flow

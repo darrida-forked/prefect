@@ -137,7 +137,7 @@ class Task(Generic[P, R]):
 
         raise_for_reserved_arguments(self.fn, ["return_state", "wait_for"])
 
-        self.tags = set(tags if tags else [])
+        self.tags = set(tags or [])
         self.task_key = to_qualified_name(self.fn)
 
         self.cache_key_fn = cache_key_fn

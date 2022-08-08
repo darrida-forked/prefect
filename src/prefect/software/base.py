@@ -11,19 +11,17 @@ class Requirement:
 
     @classmethod
     def validate(cls, value):
-        if not isinstance(value, cls):
-            # Attempt to parse the string representation of the input type
-            return cls(str(value))
-        return value
+        return value if isinstance(value, cls) else cls(str(value))
 
     def __eq__(self, other: object) -> bool:
         """
         Requirements are equal if their string specification matches.
         """
-        if not isinstance(other, Requirement):
-            return NotImplemented
-
-        return str(self) == str(other)
+        return (
+            str(self) == str(other)
+            if isinstance(other, Requirement)
+            else NotImplemented
+        )
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}({str(self)!r})"

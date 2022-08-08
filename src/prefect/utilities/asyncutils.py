@@ -337,6 +337,5 @@ async def gather(*calls: Callable[[], Coroutine[Any, Any, T]]) -> List[T]:
     """
     keys = []
     async with create_gather_task_group() as tg:
-        for call in calls:
-            keys.append(tg.start_soon(call))
+        keys.extend(tg.start_soon(call) for call in calls)
     return [tg.get_result(key) for key in keys]

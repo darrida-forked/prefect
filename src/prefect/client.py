@@ -263,9 +263,7 @@ class PrefectHttpxClient(httpx.AsyncClient):
         ):
             retry_count += 1
 
-            # Respect the "Retry-After" header, falling back to an exponential back-off
-            retry_after = response.headers.get("Retry-After")
-            if retry_after:
+            if retry_after := response.headers.get("Retry-After"):
                 retry_seconds = float(retry_after)
             else:
                 retry_seconds = 2**retry_count
@@ -422,12 +420,11 @@ class OrionClient:
             "/flows/", json=flow_data.dict(json_compatible=True)
         )
 
-        flow_id = response.json().get("id")
-        if not flow_id:
+        if flow_id := response.json().get("id"):
+            # Return the id of the created flow
+            return UUID(flow_id)
+        else:
             raise httpx.RequestError(f"Malformed response: {response}")
-
-        # Return the id of the created flow
-        return UUID(flow_id)
 
     async def read_flow(self, flow_id: UUID) -> schemas.core.Flow:
         """
@@ -488,7 +485,7 @@ class OrionClient:
             "offset": offset,
         }
 
-        response = await self._client.post(f"/flows/filter", json=body)
+        response = await self._client.post("/flows/filter", json=body)
         return pydantic.parse_obj_as(List[schemas.core.Flow], response.json())
 
     async def read_flow_by_name(
@@ -704,12 +701,10 @@ class OrionClient:
             json=concurrency_limit_create.dict(json_compatible=True),
         )
 
-        concurrency_limit_id = response.json().get("id")
-
-        if not concurrency_limit_id:
+        if concurrency_limit_id := response.json().get("id"):
+            return UUID(concurrency_limit_id)
+        else:
             raise httpx.RequestError(f"Malformed response: {response}")
-
-        return UUID(concurrency_limit_id)
 
     async def read_concurrency_limit_by_tag(
         self,
@@ -738,13 +733,10 @@ class OrionClient:
             else:
                 raise
 
-        concurrency_limit_id = response.json().get("id")
-
-        if not concurrency_limit_id:
+        if concurrency_limit_id := response.json().get("id"):
+            return schemas.core.ConcurrencyLimit.parse_obj(response.json())
+        else:
             raise httpx.RequestError(f"Malformed response: {response}")
-
-        concurrency_limit = schemas.core.ConcurrencyLimit.parse_obj(response.json())
-        return concurrency_limit
 
     async def read_concurrency_limits(
         self,
@@ -831,10 +823,10 @@ class OrionClient:
             else:
                 raise
 
-        work_queue_id = response.json().get("id")
-        if not work_queue_id:
+        if work_queue_id := response.json().get("id"):
+            return UUID(work_queue_id)
+        else:
             raise httpx.RequestError(str(response))
-        return UUID(work_queue_id)
 
     async def read_work_queue_by_name(self, name: str) -> schemas.core.WorkQueue:
         """
@@ -902,7 +894,7 @@ class OrionClient:
         """
         json_data = {"limit": limit}
         if scheduled_before:
-            json_data.update({"scheduled_before": scheduled_before.isoformat()})
+            json_data["scheduled_before"] = scheduled_before.isoformat()
 
         try:
             response = await self._client.post(
@@ -962,7 +954,7 @@ class OrionClient:
             "limit": limit,
             "offset": offset,
         }
-        response = await self._client.post(f"/work_queues/filter", json=body)
+        response = await self._client.post("/work_queues/filter", json=body)
         return pydantic.parse_obj_as(List[schemas.core.WorkQueue], response.json())
 
     async def delete_work_queue_by_id(
@@ -1151,7 +1143,7 @@ class OrionClient:
         Returns:
             A BlockSchema.
         """
-        response = await self._client.post(f"/block_schemas/filter", json={})
+        response = await self._client.post("/block_schemas/filter", json={})
         return pydantic.parse_obj_as(List[schemas.core.BlockSchema], response.json())
 
     async def read_block_document(
@@ -1252,7 +1244,7 @@ class OrionClient:
             A list of block documents
         """
         response = await self._client.post(
-            f"/block_documents/filter",
+            "/block_documents/filter",
             json=dict(
                 block_schema_type=block_schema_type,
                 offset=offset,
@@ -1260,6 +1252,7 @@ class OrionClient:
                 include_secrets=include_secrets,
             ),
         )
+
         return pydantic.parse_obj_as(List[BlockDocument], response.json())
 
     async def create_deployment(
@@ -1313,11 +1306,10 @@ class OrionClient:
         response = await self._client.post(
             "/deployments/", json=deployment_create.dict(json_compatible=True)
         )
-        deployment_id = response.json().get("id")
-        if not deployment_id:
+        if deployment_id := response.json().get("id"):
+            return UUID(deployment_id)
+        else:
             raise httpx.RequestError(f"Malformed response: {response}")
-
-        return UUID(deployment_id)
 
     async def _create_deployment_from_schema(
         self, schema: schemas.actions.DeploymentCreate
@@ -1330,11 +1322,10 @@ class OrionClient:
         response = await self._client.post(
             "/deployments/", json=schema.dict(json_compatible=True)
         )
-        deployment_id = response.json().get("id")
-        if not deployment_id:
+        if deployment_id := response.json().get("id"):
+            return UUID(deployment_id)
+        else:
             raise httpx.RequestError(f"Malformed response: {response}")
-
-        return UUID(deployment_id)
 
     async def read_deployment(
         self,
@@ -1421,7 +1412,7 @@ class OrionClient:
             "limit": limit,
             "offset": offset,
         }
-        response = await self._client.post(f"/deployments/filter", json=body)
+        response = await self._client.post("/deployments/filter", json=body)
         return pydantic.parse_obj_as(List[schemas.core.Deployment], response.json())
 
     async def delete_deployment(
@@ -1510,7 +1501,7 @@ class OrionClient:
             "offset": offset,
         }
 
-        response = await self._client.post(f"/flow_runs/filter", json=body)
+        response = await self._client.post("/flow_runs/filter", json=body)
         return pydantic.parse_obj_as(List[schemas.core.FlowRun], response.json())
 
     async def set_flow_run_state(
@@ -1695,7 +1686,7 @@ class OrionClient:
             "limit": limit,
             "offset": offset,
         }
-        response = await self._client.post(f"/task_runs/filter", json=body)
+        response = await self._client.post("/task_runs/filter", json=body)
         return pydantic.parse_obj_as(List[schemas.core.TaskRun], response.json())
 
     async def propose_state(
@@ -1749,16 +1740,10 @@ class OrionClient:
             response = await self.set_task_run_state(
                 task_run_id, state, backend_state_data=backend_state_data
             )
-        elif flow_run_id:
+        else:
             response = await self.set_flow_run_state(
                 flow_run_id, state, backend_state_data=backend_state_data
             )
-        else:
-            raise ValueError(
-                "Neither flow run id or task run id were provided. At least one must "
-                "be given."
-            )
-
         # Parse the response to return the new state
         if response.status == schemas.responses.SetStateStatus.ACCEPT:
             # Update the state with the details if provided
@@ -1864,7 +1849,7 @@ class OrionClient:
             log.dict(json_compatible=True) if isinstance(log, LogCreate) else log
             for log in logs
         ]
-        await self._client.post(f"/logs/", json=serialized_logs)
+        await self._client.post("/logs/", json=serialized_logs)
 
     async def read_logs(
         self, log_filter: LogFilter = None, limit: int = None, offset: int = None
@@ -1878,7 +1863,7 @@ class OrionClient:
             "offset": offset,
         }
 
-        response = await self._client.post(f"/logs/filter", json=body)
+        response = await self._client.post("/logs/filter", json=body)
         return pydantic.parse_obj_as(List[schemas.core.Log], response.json())
 
     async def resolve_datadoc(self, datadoc: DataDocument) -> Any:

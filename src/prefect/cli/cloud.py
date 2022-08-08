@@ -76,7 +76,7 @@ def get_cloud_client(
     if httpx_settings is not None:
         httpx_settings = httpx_settings.copy()
 
-    if infer_cloud_url is False:
+    if not infer_cloud_url:
         host = host or PREFECT_CLOUD_URL.value()
     else:
         configured_url = prefect.settings.PREFECT_API_URL.value()
@@ -103,8 +103,8 @@ class CloudClient:
         httpx_settings: dict = None,
     ) -> None:
 
-        httpx_settings = httpx_settings or dict()
-        httpx_settings.setdefault("headers", dict())
+        httpx_settings = httpx_settings or {}
+        httpx_settings.setdefault("headers", {})
         httpx_settings["headers"].setdefault("Authorization", f"Bearer {api_key}")
 
         httpx_settings.setdefault("base_url", host)
@@ -174,9 +174,9 @@ def build_table(selected_idx: int, workspaces: Iterable[str]) -> Table:
 
     for i, workspace in enumerate(sorted(workspaces)):
         if i == selected_idx:
-            table.add_row("[#024dfd on #FFFFFF]> " + workspace)
+            table.add_row(f"[#024dfd on #FFFFFF]> {workspace}")
         else:
-            table.add_row("  " + workspace)
+            table.add_row(f"  {workspace}")
     return table
 
 
@@ -355,7 +355,7 @@ async def ls():
         "[#024dfd]Available Workspaces:", justify="right", style="#8ea0ae", no_wrap=True
     )
 
-    for i, workspace_handle in enumerate(sorted(workspace_handle_details)):
+    for workspace_handle in sorted(workspace_handle_details):
         if workspace_handle == current_workspace:
             table.add_row(f"[green]  * {workspace_handle}[/green]")
         else:

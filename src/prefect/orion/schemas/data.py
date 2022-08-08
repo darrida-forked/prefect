@@ -69,10 +69,7 @@ class DataDocument(PrefectBaseModel, Generic[D]):
         return hasattr(self, "_data")
 
     def __str__(self) -> str:
-        if self.has_cached_data():
-            return repr(self._data)
-        else:
-            return repr(self)
+        return repr(self._data) if self.has_cached_data() else repr(self)
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}(encoding={self.encoding!r})"

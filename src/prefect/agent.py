@@ -78,13 +78,12 @@ class OrionAgent:
             work_queue = await self.client.read_work_queue_by_name(self.work_queue_name)
             return work_queue.id
         except httpx.HTTPStatusError as exc:
-            if exc.response.status_code == status.HTTP_404_NOT_FOUND:
-                self.logger.warning(
-                    f"No work queue found named {self.work_queue_name!r}"
-                )
-                return None
-            else:
+            if exc.response.status_code != status.HTTP_404_NOT_FOUND:
                 raise
+            self.logger.warning(
+                f"No work queue found named {self.work_queue_name!r}"
+            )
+            return None
 
     async def get_and_submit_flow_runs(self) -> List[FlowRun]:
         """
@@ -150,9 +149,8 @@ class OrionAgent:
         infra_document = await self.client.read_block_document(
             infrastructure_document_id
         )
-        infrastructure_block = Block._from_block_document(infra_document)
         # TODO: Here the agent may update the infrastructure with agent-level settings
-        return infrastructure_block
+        return Block._from_block_document(infra_document)
 
     async def submit_run(self, flow_run: FlowRun) -> None:
         """

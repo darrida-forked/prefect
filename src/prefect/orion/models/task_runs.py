@@ -314,10 +314,8 @@ async def set_task_run_state(
 
     await session.flush()
 
-    result = OrchestrationResult(
+    return OrchestrationResult(
         state=context.validated_state,
         status=context.response_status,
         details=context.response_details,
     )
-
-    return result

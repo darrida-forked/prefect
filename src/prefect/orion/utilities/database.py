@@ -109,13 +109,12 @@ class Timestamp(TypeDecorator):
     def process_bind_param(self, value, dialect):
         if value is None:
             return None
+        if value.tzinfo is None:
+            raise ValueError("Timestamps must have a timezone.")
+        elif dialect.name == "sqlite":
+            return pendulum.instance(value).in_timezone("UTC")
         else:
-            if value.tzinfo is None:
-                raise ValueError("Timestamps must have a timezone.")
-            elif dialect.name == "sqlite":
-                return pendulum.instance(value).in_timezone("UTC")
-            else:
-                return value
+            return value
 
     def process_result_value(self, value, dialect):
         # retrieve timestamps in their native timezone (or UTC)
@@ -144,20 +143,15 @@ class UUID(TypeDecorator):
     def process_bind_param(self, value, dialect):
         if value is None:
             return None
-        elif dialect.name == "postgresql":
-            return str(value)
-        elif isinstance(value, uuid.UUID):
+        elif dialect.name == "postgresql" or isinstance(value, uuid.UUID):
             return str(value)
         else:
             return str(uuid.UUID(value))
 
     def process_result_value(self, value, dialect):
-        if value is None:
-            return value
-        else:
-            if not isinstance(value, uuid.UUID):
-                value = uuid.UUID(value)
-            return value
+        if value is not None and not isinstance(value, uuid.UUID):
+            value = uuid.UUID(value)
+        return value
 
 
 class JSON(TypeDecorator):
@@ -182,21 +176,11 @@ class JSON(TypeDecorator):
 
     def process_bind_param(self, value, dialect):
         """Prepares the given value to be used as a JSON field in a parameter binding"""
-        if not value:
-            return value
-
-        # PostgreSQL does not support the floating point extrema values `NaN`,
-        # `-Infinity`, or `Infinity`
-        # https://www.postgresql.org/docs/current/datatype-json.html#JSON-TYPE-MAPPING-TABLE
-        #
-        # SQLite supports storing and retrieving full JSON values that include
-        # `NaN`, `-Infinity`, or `Infinity`, but any query that requires SQLite to parse
-        # the value (like `json_extract`) will fail.
-        #
-        # Replace any `NaN`, `-Infinity`, or `Infinity` values with `None` in the
-        # returned value.  See more about `parse_constant` at
-        # https://docs.python.org/3/library/json.html#json.load.
-        return json.loads(json.dumps(value), parse_constant=lambda c: None)
+        return (
+            json.loads(json.dumps(value), parse_constant=lambda c: None)
+            if value
+            else value
+        )
 
 
 class Pydantic(TypeDecorator):

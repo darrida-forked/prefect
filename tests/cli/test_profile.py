@@ -78,50 +78,40 @@ class TestChangingProfileAndCheckingOrionConnection:
         # attempts to reach the Cloud 2 workspaces endpoint implies a good connection
         # to Prefect Cloud as opposed to a hosted Prefect Orion instance
         with respx.mock:
-            authorized = respx.get(
+            yield respx.get(
                 "https://mock-cloud.prefect.io/api/me/workspaces",
             ).mock(return_value=Response(200, json={}))
-
-            yield authorized
 
     @pytest.fixture
     def unauthorized_cloud(self):
         # requests to cloud with an invalid key will result in a 401 response
         with respx.mock:
-            unauthorized = respx.get(
+            yield respx.get(
                 "https://mock-cloud.prefect.io/api/me/workspaces",
             ).mock(return_value=Response(401, json={}))
-
-            yield unauthorized
 
     @pytest.fixture
     def unhealthy_cloud(self):
         # Cloud may respond with a 500 error when having connection issues
         with respx.mock:
-            unhealthy_cloud = respx.get(
+            yield respx.get(
                 "https://mock-cloud.prefect.io/api/me/workspaces",
             ).mock(return_value=Response(500, json={}))
-
-            yield unhealthy_cloud
 
     @pytest.fixture
     def hosted_orion_has_no_cloud_api(self):
         # if the API URL points to a hosted Prefect Orion instance, no Cloud API will be found
         with respx.mock:
-            hosted = respx.get(
+            yield respx.get(
                 "https://hosted-orion.prefect.io/api/me/workspaces",
             ).mock(return_value=Response(404, json={}))
-
-            yield hosted
 
     @pytest.fixture
     def healthy_hosted_orion(self):
         with respx.mock:
-            hosted = respx.get(
+            yield respx.get(
                 "https://hosted-orion.prefect.io/api/health",
             ).mock(return_value=Response(200, json={}))
-
-            yield hosted
 
     def connection_error(self, *args):
         raise Exception
@@ -129,11 +119,9 @@ class TestChangingProfileAndCheckingOrionConnection:
     @pytest.fixture
     def unhealthy_hosted_orion(self):
         with respx.mock:
-            badly_hosted = respx.get(
+            yield respx.get(
                 "https://hosted-orion.prefect.io/api/health",
             ).mock(side_effect=self.connection_error)
-
-            yield badly_hosted
 
     def test_authorized_cloud_connection(self, authorized_cloud, profiles):
         save_profiles(profiles)
@@ -281,8 +269,7 @@ def test_ls_respects_current_from_context():
 def test_create_profile():
     invoke_and_assert(
         ["profile", "create", "foo"],
-        expected_output=(
-            f"""
+        expected_output="""
             Created profile with properties:
                 name - 'foo'
                 from name - None
@@ -292,9 +279,9 @@ def test_create_profile():
 
             Use created profile temporarily for a single command:
                 prefect -p 'foo' config view
-            """
-        ),
+            """,
     )
+
 
     profiles = load_profiles()
     assert profiles["foo"] == Profile(
@@ -314,8 +301,7 @@ def test_create_profile_from_existing():
 
     invoke_and_assert(
         ["profile", "create", "bar", "--from", "foo"],
-        expected_output=(
-            f"""
+        expected_output="""
             Created profile with properties:
                 name - 'bar'
                 from name - foo
@@ -325,9 +311,9 @@ def test_create_profile_from_existing():
 
             Use created profile temporarily for a single command:
                 prefect -p 'bar' config view
-            """
-        ),
+            """,
     )
+
 
     profiles = load_profiles()
     assert profiles["foo"].settings == {PREFECT_API_KEY: "foo"}, "Foo is unchanged"

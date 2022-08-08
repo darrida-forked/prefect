@@ -184,9 +184,9 @@ class CondaEnvironment(PythonEnvironment):
     def install_commands(self) -> List[str]:
         pip_install_commands = super().install_commands()
 
-        if not self.conda_requirements:
-            return pip_install_commands
-
-        return [
-            ["conda", "install", *(str(req) for req in self.conda_requirements)]
-        ] + pip_install_commands
+        return (
+            [["conda", "install", *(str(req) for req in self.conda_requirements)]]
+            + pip_install_commands
+            if self.conda_requirements
+            else pip_install_commands
+        )

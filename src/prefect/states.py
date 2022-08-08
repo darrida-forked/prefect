@@ -114,7 +114,7 @@ async def return_value_to_state(result: Any, serializer: str = "cloudpickle") ->
                 f"{states.not_final_count}/{states.total_count} states are not final."
             )
         else:
-            message = "Given states: " + states.counts_message()
+            message = f"Given states: {states.counts_message()}"
 
         # TODO: We may actually want to set the data to a `StateGroup` object and just
         #       allow it to be unpacked into a tuple and such so users can interact with
@@ -189,7 +189,7 @@ def is_state_iterable(obj: Any) -> TypeGuard[Iterable[State]]:
     # for things like dictionaries, dataframes, or pydantic models
 
     if isinstance(obj, (list, set, tuple)) and obj:
-        return all([is_state(o) for o in obj])
+        return all(is_state(o) for o in obj)
     else:
         return False
 
@@ -221,9 +221,12 @@ class StateGroup:
         count_messages = [f"total={self.total_count}"]
         if self.not_final_count:
             count_messages.append(f"not_final={self.not_final_count}")
-        for state_type, count in self.type_counts.items():
-            if count:
-                count_messages.append(f"{state_type.value!r}={count}")
+        count_messages.extend(
+            f"{state_type.value!r}={count}"
+            for state_type, count in self.type_counts.items()
+            if count
+        )
+
         return ", ".join(count_messages)
 
     @staticmethod

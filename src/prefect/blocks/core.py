@@ -50,9 +50,7 @@ class Block(BaseModel, ABC):
             Customizes Pydantic's schema generation feature to add blocks related information.
             """
             schema["block_type_slug"] = model.get_block_type_slug()
-            # Ensures args and code examples aren't included in the schema
-            description = model.get_description()
-            if description:
+            if description := model.get_description():
                 schema["description"] = model.get_description()
 
             # create a list of secret field names
@@ -76,12 +74,11 @@ class Block(BaseModel, ABC):
                 if Block.is_block_class(field.type_):
                     refs[field.name] = field.type_._to_block_schema_reference_dict()
                 if get_origin(field.type_) is Union:
-                    refs[field.name] = []
-                    for type_ in get_args(field.type_):
-                        if Block.is_block_class(type_):
-                            refs[field.name].append(
-                                type_._to_block_schema_reference_dict()
-                            )
+                    refs[field.name] = [
+                        type_._to_block_schema_reference_dict()
+                        for type_ in get_args(field.type_)
+                        if Block.is_block_class(type_)
+                    ]
 
     """
     A base class for implementing a block that wraps an external service.
@@ -249,7 +246,7 @@ class Block(BaseModel, ABC):
 
         return BlockDocument(
             id=self._block_document_id or uuid4(),
-            name=(name or self._block_document_name) if not is_anonymous else None,
+            name=None if is_anonymous else (name or self._block_document_name),
             block_schema_id=block_schema_id or self._block_schema_id,
             block_type_id=block_type_id or self._block_type_id,
             data=block_document_data,
@@ -622,29 +619,28 @@ class Block(BaseModel, ABC):
                     block_document=self._to_block_document(name=name)
                 )
             except prefect.exceptions.ObjectAlreadyExists as err:
-                if overwrite:
-                    block_document_id = self._block_document_id
-                    if block_document_id is None:
-                        existing_block_document = (
-                            await client.read_block_document_by_name(
-                                name=name, block_type_slug=self.get_block_type_slug()
-                            )
-                        )
-                        block_document_id = existing_block_document.id
-                    await client.update_block_document(
-                        block_document_id=block_document_id,
-                        block_document=self._to_block_document(name=name),
-                    )
-                    block_document = await client.read_block_document(
-                        block_document_id=block_document_id
-                    )
-                else:
+                if not overwrite:
                     raise ValueError(
                         "You are attempting to save values with a name that is already in "
                         "use for this block type. If you would like to overwrite the values that are saved, "
                         "then save with `overwrite=True`."
                     ) from err
 
+                block_document_id = self._block_document_id
+                if block_document_id is None:
+                    existing_block_document = (
+                        await client.read_block_document_by_name(
+                            name=name, block_type_slug=self.get_block_type_slug()
+                        )
+                    )
+                    block_document_id = existing_block_document.id
+                await client.update_block_document(
+                    block_document_id=block_document_id,
+                    block_document=self._to_block_document(name=name),
+                )
+                block_document = await client.read_block_document(
+                    block_document_id=block_document_id
+                )
         # Update metadata on block instance for later use.
         self._block_document_name = block_document.name
         self._block_document_id = block_document.id

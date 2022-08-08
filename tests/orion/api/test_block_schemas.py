@@ -199,7 +199,7 @@ class TestDeleteBlockSchema:
 
 class TestReadBlockSchema:
     async def test_read_all_block_schemas(self, session, client, block_schemas):
-        result = await client.post(f"/block_schemas/filter")
+        result = await client.post("/block_schemas/filter")
         api_schemas = pydantic.parse_obj_as(
             List[schemas.core.BlockSchema], result.json()
         )
@@ -213,11 +213,12 @@ class TestReadBlockSchema:
         self, session, client, block_schemas, block_type_x
     ):
         result = await client.post(
-            f"/block_schemas/filter",
+            "/block_schemas/filter",
             json=dict(
                 block_schemas=dict(block_type_id=dict(any_=[str(block_type_x.id)]))
             ),
         )
+
         api_schemas = pydantic.parse_obj_as(
             List[schemas.core.BlockSchema], result.json()
         )
@@ -227,11 +228,12 @@ class TestReadBlockSchema:
         self, session, client, block_schemas, block_type_y
     ):
         result = await client.post(
-            f"/block_schemas/filter",
+            "/block_schemas/filter",
             json=dict(
                 block_schemas=dict(block_type_id=dict(any_=[str(block_type_y.id)]))
             ),
         )
+
         api_schemas = pydantic.parse_obj_as(
             List[schemas.core.BlockSchema], result.json()
         )
@@ -241,7 +243,7 @@ class TestReadBlockSchema:
         self, session, client, block_schemas, block_type_x, block_type_y
     ):
         result = await client.post(
-            f"/block_schemas/filter",
+            "/block_schemas/filter",
             json=dict(
                 block_schemas=dict(
                     block_type_id=dict(
@@ -250,6 +252,7 @@ class TestReadBlockSchema:
                 )
             ),
         )
+
         api_schemas = pydantic.parse_obj_as(
             List[schemas.core.BlockSchema], result.json()
         )
@@ -282,11 +285,12 @@ class TestReadBlockSchema:
         self, client, block_schemas_with_capabilities
     ):
         result = await client.post(
-            f"/block_schemas/filter",
+            "/block_schemas/filter",
             json=dict(
                 block_schemas=dict(block_capabilities=dict(all_=["fly", "swim"]))
             ),
         )
+
 
         assert result.status_code == 200
         block_schemas = pydantic.parse_obj_as(
@@ -296,9 +300,10 @@ class TestReadBlockSchema:
         assert block_schemas[0].id == block_schemas_with_capabilities[0].id
 
         result = await client.post(
-            f"/block_schemas/filter",
+            "/block_schemas/filter",
             json=dict(block_schemas=dict(block_capabilities=dict(all_=["fly"]))),
         )
+
 
         assert result.status_code == 200
         block_schemas = pydantic.parse_obj_as(
@@ -311,9 +316,10 @@ class TestReadBlockSchema:
         ]
 
         result = await client.post(
-            f"/block_schemas/filter",
+            "/block_schemas/filter",
             json=dict(block_schemas=dict(block_capabilities=dict(all_=["swim"]))),
         )
+
 
         assert result.status_code == 200
         block_schemas = pydantic.parse_obj_as(

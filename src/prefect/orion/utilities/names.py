@@ -53,8 +53,6 @@ def obfuscate_string(s: str) -> str:
     "abcdefghijklmnopqrs" -> "****pqrs"
     """
     result = OBFUSCATED_PREFIX + "*" * 4
-    # take up to 4 characters, but only after the 10th character
-    suffix = s[10:][-4:]
-    if suffix:
+    if suffix := s[10:][-4:]:
         result = f"{result[:-len(suffix)]}{suffix}"
     return result

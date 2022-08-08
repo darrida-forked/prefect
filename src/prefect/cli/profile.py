@@ -229,10 +229,7 @@ def delete(name: str):
 
     profiles.remove_profile(name)
 
-    verb = "Removed"
-    if name == "default":
-        verb = "Reset"
-
+    verb = "Reset" if name == "default" else "Removed"
     prefect.settings.save_profiles(profiles)
     exit_with_success(f"{verb} profile {name!r}.")
 

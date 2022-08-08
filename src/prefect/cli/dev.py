@@ -152,7 +152,7 @@ async def api(
         "--factory",
         "prefect.orion.api.server:create_app",
         "--host",
-        str(host),
+        host,
         "--port",
         str(port),
         "--log-level",
@@ -161,6 +161,7 @@ async def api(
         "--reload-dir",
         str(prefect.__module_path__),
     ]
+
 
     app.console.print(f"Running: {' '.join(command)}")
 
@@ -208,10 +209,12 @@ async def start(
             tg.start_soon(ui)
         if not exclude_agent:
             # Hook the agent to the hosted API if running
-            if not exclude_api:
-                host = f"http://{PREFECT_ORION_API_HOST.value()}:{PREFECT_ORION_API_PORT.value()}/api"
-            else:
-                host = PREFECT_API_URL.value()
+            host = (
+                PREFECT_API_URL.value()
+                if exclude_api
+                else f"http://{PREFECT_ORION_API_HOST.value()}:{PREFECT_ORION_API_PORT.value()}/api"
+            )
+
             tg.start_soon(agent, host)
 
 

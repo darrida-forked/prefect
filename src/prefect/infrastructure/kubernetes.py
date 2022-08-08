@@ -95,8 +95,9 @@ class KubernetesJob(Infrastructure):
     @validator("job")
     def ensure_job_includes_all_required_components(cls, value: KubernetesManifest):
         patch = JsonPatch.from_diff(value, cls.base_job_manifest())
-        missing_paths = sorted([op["path"] for op in patch if op["op"] == "add"])
-        if missing_paths:
+        if missing_paths := sorted(
+            [op["path"] for op in patch if op["op"] == "add"]
+        ):
             raise ValueError(
                 "Job is missing required attributes at the following paths: "
                 f"{', '.join(missing_paths)}"
@@ -106,14 +107,13 @@ class KubernetesJob(Infrastructure):
     @validator("job")
     def ensure_job_has_compatible_values(cls, value: KubernetesManifest):
         patch = JsonPatch.from_diff(value, cls.base_job_manifest())
-        incompatible = sorted(
+        if incompatible := sorted(
             [
                 f"{op['path']} must have value {op['value']!r}"
                 for op in patch
                 if op["op"] == "replace"
             ]
-        )
-        if incompatible:
+        ):
             raise ValueError(
                 "Job has incompatble values for the following attributes: "
                 f"{', '.join(incompatible)}"
@@ -124,9 +124,7 @@ class KubernetesJob(Infrastructure):
     def cast_customizations_to_a_json_patch(
         cls, value: Union[List[Dict], JsonPatch]
     ) -> JsonPatch:
-        if isinstance(value, list):
-            return JsonPatch(value)
-        return value
+        return JsonPatch(value) if isinstance(value, list) else value
 
     # Support serialization of the 'JsonPatch' type
     class Config:
@@ -429,16 +427,14 @@ class KubernetesJob(Infrastructure):
         Returns:
             the slugified job name
         """
-        slug = slugify(
+        # TODO: Handle the case that the name is an empty string after being
+        # slugified.
+
+        return slugify(
             name,
             max_length=45,  # Leave enough space for generateName
             regex_pattern=r"[^a-zA-Z0-9-]+",
         )
-
-        # TODO: Handle the case that the name is an empty string after being
-        # slugified.
-
-        return slug
 
     def _slugify_label_key(self, key: str) -> str:
         """
@@ -507,9 +503,10 @@ class KubernetesJob(Infrastructure):
         Returns:
             The slugified value
         """
-        # TODO: Note that the text must start and end with an alphanumeric character
-        #       but that is not enforced here
-        slug = (
+        # Fallback to the original if we end up with an empty slug, this will allow
+        # Kubernetes to throw the validation error
+
+        return (
             slugify(
                 value,
                 max_length=63,
@@ -517,10 +514,6 @@ class KubernetesJob(Infrastructure):
             )
             or value
         )
-        # Fallback to the original if we end up with an empty slug, this will allow
-        # Kubernetes to throw the validation error
-
-        return slug
 
     def _get_environment_variables(self):
         # If the API URL has been set by the base environment rather than the by the

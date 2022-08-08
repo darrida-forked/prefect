@@ -140,22 +140,21 @@ def enter_flow_run_engine_from_flow_call(
     if flow.isasync:
         return begin_run()  # Return a coroutine for the user to await
 
-    # Sync flow run
     if not is_subflow_run:
-        if in_async_main_thread():
-            # An event loop is already running and we must create a blocking portal to
-            # run async code from this synchronous context
-            with start_blocking_portal() as portal:
-                return portal.call(begin_run)
-        else:
+        if not in_async_main_thread():
             # An event loop is not running so we will create one
             return anyio.run(begin_run)
 
+        # An event loop is already running and we must create a blocking portal to
+        # run async code from this synchronous context
+        with start_blocking_portal() as portal:
+            return portal.call(begin_run)
     # Sync subflow run
-    if not parent_flow_run_context.flow.isasync:
-        return run_async_from_worker_thread(begin_run)
-    else:
-        return parent_flow_run_context.sync_portal.call(begin_run)
+    return (
+        parent_flow_run_context.sync_portal.call(begin_run)
+        if parent_flow_run_context.flow.isasync
+        else run_async_from_worker_thread(begin_run)
+    )
 
 
 def enter_flow_run_engine_from_subprocess(flow_run_id: UUID) -> State:
@@ -527,11 +526,11 @@ async def orchestrate_flow_run(
         try:
             with timeout_context as timeout_scope:
                 with partial_flow_run_context.finalize(
-                    flow=flow,
-                    flow_run=flow_run,
-                    client=client,
-                    timeout_scope=timeout_scope,
-                ) as flow_run_context:
+                                    flow=flow,
+                                    flow_run=flow_run,
+                                    client=client,
+                                    timeout_scope=timeout_scope,
+                                ) as flow_run_context:
                     args, kwargs = parameters_to_args_kwargs(flow.fn, parameters)
                     logger.debug(
                         f"Executing flow {flow.name!r} for flow run {flow_run.name!r}..."
@@ -540,9 +539,7 @@ async def orchestrate_flow_run(
                     if PREFECT_DEBUG_MODE:
                         logger.debug(f"Executing {call_repr(flow.fn, *args, **kwargs)}")
                     else:
-                        logger.debug(
-                            f"Beginning execution...", extra={"state_message": True}
-                        )
+                        logger.debug("Beginning execution...", extra={"state_message": True})
 
                     flow_call = partial(flow.fn, *args, **kwargs)
 
@@ -567,10 +564,7 @@ async def orchestrate_flow_run(
                 message=f"Flow run exceeded timeout of {flow.timeout_seconds} seconds",
             )
         except Exception as exc:
-            logger.error(
-                f"Encountered exception during execution:",
-                exc_info=True,
-            )
+            logger.error("Encountered exception during execution:", exc_info=True)
             terminal_state = Failed(
                 message="Flow run encountered an exception.",
                 data=DataDocument.encode("cloudpickle", exc),
@@ -703,7 +697,7 @@ async def begin_task_map(
 
     # Resolve any futures / states that are in the parameters as we need to
     # validate the lengths of those values before proceeding.
-    parameters.update(await resolve_inputs(parameters))
+    parameters |= await resolve_inputs(parameters)
     parameter_lengths = {
         key: len(val)
         for key, val in parameters.items()
@@ -1034,7 +1028,7 @@ async def orchestrate_task_run(
             if PREFECT_DEBUG_MODE.value():
                 logger.debug(f"Executing {call_repr(task.fn, *args, **kwargs)}")
             else:
-                logger.debug(f"Beginning execution...", extra={"state_message": True})
+                logger.debug("Beginning execution...", extra={"state_message": True})
 
             with task_run_context:
                 if task.isasync:
@@ -1048,10 +1042,7 @@ async def orchestrate_task_run(
                     result = await run_sync(task.fn, *args, **kwargs)
 
         except Exception as exc:
-            logger.error(
-                f"Encountered exception during execution:",
-                exc_info=True,
-            )
+            logger.error("Encountered exception during execution:", exc_info=True)
             terminal_state = Failed(
                 message="Task run encountered an exception.",
                 data=DataDocument.encode("cloudpickle", exc),
@@ -1132,7 +1123,7 @@ async def wait_for_task_runs_and_report_crashes(
     for future, state in zip(task_run_futures, states):
         logger = task_run_logger(future.task_run)
 
-        if not state.type == StateType.CRASHED:
+        if state.type != StateType.CRASHED:
             continue
 
         exception = state.result(raise_on_failure=False)
@@ -1249,8 +1240,7 @@ def get_state_for_result(obj: Any) -> Optional[State]:
 
     `link_state_to_result` must have been called first.
     """
-    flow_run_context = FlowRunContext.get()
-    if flow_run_context:
+    if flow_run_context := FlowRunContext.get():
         return flow_run_context.task_run_results.get(id(obj))
 
 
@@ -1262,12 +1252,7 @@ def link_state_to_result(state: State, result: Any) -> None:
     if type(result) in UNTRACKABLE_TYPES:
         return
 
-    # Cache the state onto the flow_run_context, associated by the id of the
-    # result. This allows a best-effort attempt to get the state from an object
-    # that wouldn't allow the __prefect_state__ attribute to be set. It also
-    # acts as a complete cache of states for reporting in a flow run state.
-    flow_run_context = FlowRunContext.get()
-    if flow_run_context:
+    if flow_run_context := FlowRunContext.get():
         flow_run_context.task_run_results[id(result)] = state
 
 

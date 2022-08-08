@@ -115,7 +115,7 @@ class Scheduler(LoopService):
         """
         Returns a sqlalchemy query for selecting deployments to schedule
         """
-        query = (
+        return (
             sa.select(db.Deployment.id)
             .where(
                 db.Deployment.is_schedule_active.is_(True),
@@ -124,7 +124,6 @@ class Scheduler(LoopService):
             .order_by(db.Deployment.id)
             .limit(self.deployment_batch_size)
         )
-        return query
 
     async def _collect_flow_runs(
         self,
@@ -234,7 +233,7 @@ class RecentDeploymentsScheduler(Scheduler):
         """
         Returns a sqlalchemy query for selecting deployments to schedule
         """
-        query = (
+        return (
             sa.select(db.Deployment.id)
             .where(
                 db.Deployment.is_schedule_active.is_(True),
@@ -250,7 +249,6 @@ class RecentDeploymentsScheduler(Scheduler):
             .order_by(db.Deployment.id)
             .limit(self.deployment_batch_size)
         )
-        return query
 
 
 if __name__ == "__main__":

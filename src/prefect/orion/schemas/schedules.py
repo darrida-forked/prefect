@@ -73,9 +73,7 @@ class IntervalSchedule(PrefectBaseModel):
 
     @validator("anchor_date", always=True)
     def default_anchor_date(cls, v):
-        if v is None:
-            return pendulum.now("UTC")
-        return pendulum.instance(v)
+        return pendulum.now("UTC") if v is None else pendulum.instance(v)
 
     @validator("timezone", always=True)
     def default_timezone(cls, v, *, values, **kwargs):
@@ -83,17 +81,9 @@ class IntervalSchedule(PrefectBaseModel):
         if v and v not in pendulum.tz.timezones:
             raise ValueError(f'Invalid timezone: "{v}"')
 
-        # otherwise infer the timezone from the anchor date
         elif v is None and values.get("anchor_date"):
             tz = values["anchor_date"].tz.name
-            if tz in pendulum.tz.timezones:
-                return tz
-            # sometimes anchor dates have "timezones" that are UTC offsets
-            # like "-04:00". This happens when parsing ISO8601 strings.
-            # In this case we, the correct inferred localization is "UTC".
-            else:
-                return "UTC"
-
+            return tz if tz in pendulum.tz.timezones else "UTC"
         return v
 
     async def get_dates(
@@ -118,13 +108,7 @@ class IntervalSchedule(PrefectBaseModel):
             List[pendulum.DateTime]: a list of dates
         """
         if n is None:
-            # if an end was supplied, we do our best to supply all matching dates (up to
-            # MAX_ITERATIONS)
-            if end is not None:
-                n = MAX_ITERATIONS
-            else:
-                n = 1
-
+            n = MAX_ITERATIONS if end is not None else 1
         if start is None:
             start = pendulum.now("UTC")
 
@@ -153,12 +137,7 @@ class IntervalSchedule(PrefectBaseModel):
         counter = 0
         dates = set()
 
-        while True:
-
-            # if the end date was exceeded, exit
-            if end and next_date > end:
-                break
-
+        while not (end and next_date > end):
             # ensure no duplicates; weird things can happen with DST
             dates.add(next_date)
 
@@ -259,11 +238,7 @@ class CronSchedule(PrefectBaseModel):
         if n is None:
             # if an end was supplied, we do our best to supply all matching dates (up to
             # MAX_ITERATIONS)
-            if end is not None:
-                n = MAX_ITERATIONS
-            else:
-                n = 1
-
+            n = MAX_ITERATIONS if end is not None else 1
         elif self.timezone:
             start = start.in_tz(self.timezone)
 
@@ -407,13 +382,7 @@ class RRuleSchedule(PrefectBaseModel):
         start, end = _prepare_scheduling_start_and_end(start, end, self.timezone)
 
         if n is None:
-            # if an end was supplied, we do our best to supply all matching dates (up
-            # to MAX_ITERATIONS)
-            if end is not None:
-                n = MAX_ITERATIONS
-            else:
-                n = 1
-
+            n = MAX_ITERATIONS if end is not None else 1
         dates = set()
         counter = 0
 

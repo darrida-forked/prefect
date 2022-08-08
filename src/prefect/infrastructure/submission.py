@@ -21,9 +21,7 @@ def base_flow_run_environment(flow_run) -> Dict[str, str]:
     """
     Generate a dictionary of environment variables for a flow run job.
     """
-    environment = {}
-    environment["PREFECT__FLOW_RUN_ID"] = flow_run.id.hex
-    return environment
+    return {"PREFECT__FLOW_RUN_ID": flow_run.id.hex}
 
 
 def _prepare_infrastructure(

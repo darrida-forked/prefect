@@ -42,7 +42,8 @@ class PythonEnvironment(BaseModel):
         return PythonEnvironment(pip_requirements=path.read_text().strip().splitlines())
 
     def install_commands(self) -> List[List[str]]:
-        if not self.pip_requirements:
-            return []
-
-        return [["pip", "install", *(str(req) for req in self.pip_requirements)]]
+        return (
+            [["pip", "install", *(str(req) for req in self.pip_requirements)]]
+            if self.pip_requirements
+            else []
+        )

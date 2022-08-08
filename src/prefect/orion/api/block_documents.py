@@ -89,11 +89,9 @@ async def read_block_document_by_id(
         block_document_id=block_document_id,
         include_secrets=include_secrets,
     )
-    if not block_document:
-        return responses.JSONResponse(
-            status_code=404, content={"message": "Block document not found"}
-        )
-    return block_document
+    return block_document or responses.JSONResponse(
+        status_code=404, content={"message": "Block document not found"}
+    )
 
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)

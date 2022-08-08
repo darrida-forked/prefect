@@ -1462,10 +1462,11 @@ class TestToBlockType:
 
 class TestGetDescription:
     def test_no_description_configured(self):
+
         class A(Block):
             message: str
 
-        assert A.get_description() == None
+        assert A.get_description() is None
 
     def test_description_from_docstring(self, caplog):
         class A(Block):
@@ -1494,10 +1495,11 @@ class TestGetDescription:
 
 class TestGetCodeExample:
     def test_no_code_example_configured(self):
+
         class A(Block):
             message: str
 
-        assert A.get_code_example() == None
+        assert A.get_code_example() is None
 
     def test_code_example_from_docstring_example_heading(self, caplog):
         class A(Block):

@@ -86,10 +86,7 @@ def test_register_blocks_from_txt_file(tmp_path):
     invoke_and_assert(
         ["block", "register", "-f", "test.txt"],
         expected_code=1,
-        expected_output_contains=(
-            f"test.txt is not a .py file. Please specify a "
-            ".py that contains blocks to be registered."
-        ),
+        expected_output_contains='test.txt is not a .py file. Please specify a .py that contains blocks to be registered.',
     )
 
 

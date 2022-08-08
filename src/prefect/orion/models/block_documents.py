@@ -178,7 +178,7 @@ async def _construct_full_block_document(
     parent_block_document: Optional[BlockDocument] = None,
     include_secrets: bool = False,
 ) -> Optional[BlockDocument]:
-    if len(block_documents_with_references) == 0:
+    if not block_documents_with_references:
         return None
     if parent_block_document is None:
         parent_block_document = copy(
@@ -493,9 +493,10 @@ async def update_block_document(
         ):
             key = tuple(field.split("."))
             current_secret = flat_current_data.get(key)
-            if current_secret is not None:
-                if flat_update_data.get(key) == obfuscate_string(current_secret):
-                    del flat_update_data[key]
+            if current_secret is not None and flat_update_data.get(
+                key
+            ) == obfuscate_string(current_secret):
+                del flat_update_data[key]
         update_values["data"] = flatdict_to_dict(flat_update_data)
 
         # merge the existing data and the new data for partial updates

@@ -52,9 +52,7 @@ class LocalFileSystem(ReadableFileSystem, WritableFileSystem):
 
     @validator("basepath", pre=True)
     def cast_pathlib(cls, value):
-        if isinstance(value, Path):
-            return str(value)
-        return value
+        return str(value) if isinstance(value, Path) else value
 
     def _resolve_path(self, path: str) -> Path:
         # Only resolve the base path at runtime, default to the current directory
@@ -71,7 +69,7 @@ class LocalFileSystem(ReadableFileSystem, WritableFileSystem):
             path = basepath / path
         else:
             path = path.resolve()
-            if not basepath in path.parents:
+            if basepath not in path.parents:
                 raise ValueError(
                     f"Attempted to write to path {path} outside of the base path {basepath}."
                 )
@@ -129,9 +127,7 @@ class LocalFileSystem(ReadableFileSystem, WritableFileSystem):
             ignore_func = await self._get_ignore_func(local_path, ignore_file)
         else:
             ignore_func = None
-        if local_path == to_path:
-            pass
-        else:
+        if local_path != to_path:
             if sys.version_info < (3, 8):
                 shutil.copytree(local_path, to_path, ignore=ignore_func)
             else:
@@ -220,17 +216,17 @@ class RemoteFileSystem(ReadableFileSystem, WritableFileSystem):
         scheme, netloc, urlpath, _, _ = urllib.parse.urlsplit(path)
 
         # Confirm that absolute paths are valid
-        if scheme:
-            if scheme != base_scheme:
-                raise ValueError(
-                    f"Path {path!r} with scheme {scheme!r} must use the same scheme as the base path {base_scheme!r}."
-                )
+        if scheme and scheme != base_scheme:
+            raise ValueError(
+                f"Path {path!r} with scheme {scheme!r} must use the same scheme as the base path {base_scheme!r}."
+            )
 
-        if netloc:
-            if (netloc != base_netloc) or not urlpath.startswith(base_urlpath):
-                raise ValueError(
-                    f"Path {path!r} is outside of the base path {self.basepath!r}."
-                )
+        if netloc and (
+            (netloc != base_netloc) or not urlpath.startswith(base_urlpath)
+        ):
+            raise ValueError(
+                f"Path {path!r} is outside of the base path {self.basepath!r}."
+            )
 
         return f"{self.basepath.rstrip('/')}/{urlpath.lstrip('/')}"
 
@@ -278,13 +274,8 @@ class RemoteFileSystem(ReadableFileSystem, WritableFileSystem):
         for f in glob.glob("**", recursive=True):
             if ignore_file and f not in included_files:
                 continue
-            if to_path.endswith("/"):
-                fpath = to_path + f
-            else:
-                fpath = to_path + "/" + f
-            if Path(f).is_dir():
-                pass
-            else:
+            fpath = to_path + f if to_path.endswith("/") else f"{to_path}/{f}"
+            if not Path(f).is_dir():
                 self.filesystem.put_file(f, fpath, overwrite=True)
             counter += 1
         return counter
@@ -441,10 +432,9 @@ class GCS(ReadableFileSystem, WritableFileSystem):
                 raise ValueError(
                     "Unable to load provided service_account_info. Please make sure that the provided value is a valid JSON string."
                 )
-        remote_file_system = RemoteFileSystem(
+        return RemoteFileSystem(
             basepath=f"gcs://{self.bucket_path}", settings=settings
         )
-        return remote_file_system
 
     async def get_directory(
         self, from_path: Optional[str] = None, local_path: Optional[str] = None

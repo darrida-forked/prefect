@@ -51,7 +51,7 @@ class TestManifestGeneration:
         )
         res = glob.glob(f"{cwd}/**/**", recursive=True)
         assert len({p for p in res if p.endswith("-manifest.json")}) == 1
-        assert len({p for p in res if p.endswith("-deployment.yaml")}) == 0
+        assert not {p for p in res if p.endswith("-deployment.yaml")}
 
     def test_manifest_only_creation_does_not_require_name(self, cwd):
         invoke_and_assert(
@@ -67,4 +67,4 @@ class TestManifestGeneration:
         )
         res = glob.glob(f"{cwd}/**/**", recursive=True)
         assert len({p for p in res if p.endswith("-manifest.json")}) == 1
-        assert len({p for p in res if p.endswith("-deployment.yaml")}) == 0
+        assert not {p for p in res if p.endswith("-deployment.yaml")}

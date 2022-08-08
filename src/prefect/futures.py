@@ -305,10 +305,7 @@ async def resolve_futures_to_states(
     """
 
     async def visit_fn(expr):
-        if isinstance(expr, PrefectFuture):
-            return await expr._wait()
-        else:
-            return expr
+        return await expr._wait() if isinstance(expr, PrefectFuture) else expr
 
     return await visit_collection(expr, visit_fn=visit_fn, return_data=True)
 
@@ -330,6 +327,6 @@ def call_repr(__fn: Callable, *args: Any, **kwargs: Any) -> str:
 
     # Enforce a maximum length
     if len(call_args) > 100:
-        call_args = call_args[:100] + "..."
+        call_args = f"{call_args[:100]}..."
 
     return f"{name}({call_args})"

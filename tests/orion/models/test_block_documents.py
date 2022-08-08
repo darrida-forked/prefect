@@ -455,18 +455,19 @@ class TestCreateBlockDocument:
             session=session,
             block_document=schemas.actions.BlockDocumentCreate(
                 name="x",
-                data=dict(),
+                data={},
                 block_schema_id=block_schemas[0].id,
                 block_type_id=block_schemas[0].block_type_id,
             ),
         )
+
 
         with pytest.raises(sa.exc.IntegrityError):
             await models.block_documents.create_block_document(
                 session=session,
                 block_document=schemas.actions.BlockDocumentCreate(
                     name="x",
-                    data=dict(),
+                    data={},
                     block_schema_id=block_schemas[0].id,
                     block_type_id=block_schemas[0].block_type_id,
                 ),
@@ -479,17 +480,18 @@ class TestCreateBlockDocument:
             session=session,
             block_document=schemas.actions.BlockDocumentCreate(
                 name="x",
-                data=dict(),
+                data={},
                 block_schema_id=block_schemas[0].id,
                 block_type_id=block_schemas[0].block_type_id,
             ),
         )
 
+
         assert await models.block_documents.create_block_document(
             session=session,
             block_document=schemas.actions.BlockDocumentCreate(
                 name="x",
-                data=dict(),
+                data={},
                 block_schema_id=block_schemas[1].id,
                 block_type_id=block_schemas[1].block_type_id,
             ),
@@ -501,22 +503,24 @@ class TestCreateBlockDocument:
         result1 = await models.block_documents.create_block_document(
             session=session,
             block_document=schemas.actions.BlockDocumentCreate(
-                data=dict(),
+                data={},
                 block_schema_id=block_schemas[0].id,
                 block_type_id=block_schemas[0].block_type_id,
                 is_anonymous=True,
             ),
         )
 
+
         result2 = await models.block_documents.create_block_document(
             session=session,
             block_document=schemas.actions.BlockDocumentCreate(
-                data=dict(),
+                data={},
                 block_schema_id=block_schemas[1].id,
                 block_type_id=block_schemas[1].block_type_id,
                 is_anonymous=True,
             ),
         )
+
         assert result1.id != result2.id
         assert result1.name != result2.name
 
@@ -558,11 +562,12 @@ class TestReadBlockDocument:
             session=session,
             block_document=schemas.actions.BlockDocumentCreate(
                 name="x",
-                data=dict(),
+                data={},
                 block_schema_id=block_schemas[0].id,
                 block_type_id=block_schemas[0].block_type_id,
             ),
         )
+
 
         result = await models.block_documents.read_block_document_by_id(
             session=session, block_document_id=block.id
@@ -629,11 +634,12 @@ class TestReadBlockDocument:
             session=session,
             block_document=schemas.actions.BlockDocumentCreate(
                 name="x",
-                data=dict(),
+                data={},
                 block_schema_id=block_schemas[0].id,
                 block_type_id=block_schemas[0].block_type_id,
             ),
         )
+
 
         result = await models.block_documents.read_block_document_by_name(
             session=session,
@@ -703,8 +709,7 @@ class TestReadBlockDocuments:
     @pytest.fixture(autouse=True)
     async def block_documents(self, session, block_schemas):
 
-        block_documents = []
-        block_documents.append(
+        block_documents = [
             await models.block_documents.create_block_document(
                 session=session,
                 block_document=schemas.actions.BlockDocumentCreate(
@@ -713,7 +718,8 @@ class TestReadBlockDocuments:
                     block_type_id=block_schemas[0].block_type_id,
                 ),
             )
-        )
+        ]
+
         block_documents.append(
             await models.block_documents.create_block_document(
                 session=session,
@@ -907,11 +913,12 @@ class TestDeleteBlockDocument:
             session=session,
             block_document=schemas.actions.BlockDocumentCreate(
                 name="x",
-                data=dict(),
+                data={},
                 block_schema_id=block_schemas[0].id,
                 block_type_id=block_schemas[0].block_type_id,
             ),
         )
+
 
         block_document_id = block.id
 

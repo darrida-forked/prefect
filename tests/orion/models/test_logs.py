@@ -111,11 +111,11 @@ class TestReadLogs:
         logs = await models.logs.read_logs(session=session, log_filter=log_filter)
 
         assert len(logs) == 3
-        assert all([log.flow_run_id == flow_run_id for log in logs])
+        assert all(log.flow_run_id == flow_run_id for log in logs)
 
     async def test_read_logs_task_run_id(self, session, logs, task_run_id):
         log_filter = LogFilter(task_run_id={"any_": [task_run_id]})
         logs = await models.logs.read_logs(session=session, log_filter=log_filter)
 
         assert len(logs) == 1
-        assert all([log.task_run_id == task_run_id for log in logs])
+        assert all(log.task_run_id == task_run_id for log in logs)

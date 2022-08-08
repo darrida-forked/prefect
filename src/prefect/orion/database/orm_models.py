@@ -47,13 +47,13 @@ class ORMBase:
         return f"{self.__class__.__name__}(id={self.id})"
 
     @declared_attr
-    def __tablename__(cls):
+    def __tablename__(self):
         """
         By default, turn the model's camel-case class name
         into a snake-case table name. Override by providing
         an explicit `__tablename__` class property.
         """
-        return camel_to_snake.sub("_", cls.__name__).lower()
+        return camel_to_snake.sub("_", self.__name__).lower()
 
     id = sa.Column(
         UUID(),
@@ -91,15 +91,15 @@ class ORMFlow:
     tags = sa.Column(JSON, server_default="[]", default=list, nullable=False)
 
     @declared_attr
-    def flow_runs(cls):
+    def flow_runs(self):
         return sa.orm.relationship("FlowRun", back_populates="flow", lazy="raise")
 
     @declared_attr
-    def deployments(cls):
+    def deployments(self):
         return sa.orm.relationship("Deployment", back_populates="flow", lazy="raise")
 
     @declared_attr
-    def __table_args__(cls):
+    def __table_args__(self):
         return (sa.UniqueConstraint("name"), sa.Index("ix_flow__created", "created"))
 
 
@@ -110,7 +110,7 @@ class ORMFlowRunState:
     # this column isn't explicitly indexed because it is included in
     # the unique compound index on (flow_run_id, timestamp)
     @declared_attr
-    def flow_run_id(cls):
+    def flow_run_id(self):
         return sa.Column(
             UUID(), sa.ForeignKey("flow_run.id", ondelete="cascade"), nullable=False
         )
@@ -135,18 +135,16 @@ class ORMFlowRunState:
     data = sa.Column(Pydantic(schemas.data.DataDocument), nullable=True)
 
     @declared_attr
-    def flow_run(cls):
+    def flow_run(self):
         return sa.orm.relationship(
-            "FlowRun",
-            lazy="raise",
-            foreign_keys=[cls.flow_run_id],
+            "FlowRun", lazy="raise", foreign_keys=[self.flow_run_id]
         )
 
     def as_state(self) -> schemas.states.State:
         return schemas.states.State.from_orm(self)
 
     @declared_attr
-    def __table_args__(cls):
+    def __table_args__(self):
         return (
             sa.Index(
                 "uq_flow_run_state__flow_run_id_timestamp_desc",
@@ -164,7 +162,7 @@ class ORMTaskRunState:
     # this column isn't explicitly indexed because it is included in
     # the unique compound index on (task_run_id, timestamp)
     @declared_attr
-    def task_run_id(cls):
+    def task_run_id(self):
         return sa.Column(
             UUID(), sa.ForeignKey("task_run.id", ondelete="cascade"), nullable=False
         )
@@ -189,18 +187,16 @@ class ORMTaskRunState:
     data = sa.Column(Pydantic(schemas.data.DataDocument), nullable=True)
 
     @declared_attr
-    def task_run(cls):
+    def task_run(self):
         return sa.orm.relationship(
-            "TaskRun",
-            lazy="raise",
-            foreign_keys=[cls.task_run_id],
+            "TaskRun", lazy="raise", foreign_keys=[self.task_run_id]
         )
 
     def as_state(self) -> schemas.states.State:
         return schemas.states.State.from_orm(self)
 
     @declared_attr
-    def __table_args__(cls):
+    def __table_args__(self):
         return (
             sa.Index(
                 "uq_task_run_state__task_run_id_timestamp_desc",
@@ -224,7 +220,7 @@ class ORMTaskRunStateCache:
     task_run_state_id = sa.Column(UUID(), nullable=False)
 
     @declared_attr
-    def __table_args__(cls):
+    def __table_args__(self):
         return (
             sa.Index(
                 "ix_task_run_state_cache__cache_key_created_desc",
@@ -315,19 +311,19 @@ class ORMRun:
             return datetime.timedelta(0)
 
     @estimated_start_time_delta.expression
-    def estimated_start_time_delta(cls):
+    def estimated_start_time_delta(self):
         return sa.case(
             (
-                cls.start_time > cls.expected_start_time,
-                date_diff(cls.start_time, cls.expected_start_time),
+                self.start_time > self.expected_start_time,
+                date_diff(self.start_time, self.expected_start_time),
             ),
             (
                 sa.and_(
-                    cls.start_time.is_(None),
-                    cls.state_type.not_in(schemas.states.TERMINAL_STATES),
-                    cls.expected_start_time < now(),
+                    self.start_time.is_(None),
+                    self.state_type.not_in(schemas.states.TERMINAL_STATES),
+                    self.expected_start_time < now(),
                 ),
-                date_diff(now(), cls.expected_start_time),
+                date_diff(now(), self.expected_start_time),
             ),
             else_=datetime.timedelta(0),
         )
@@ -338,7 +334,7 @@ class ORMFlowRun(ORMRun):
     """SQLAlchemy model of a flow run."""
 
     @declared_attr
-    def flow_id(cls):
+    def flow_id(self):
         return sa.Column(
             UUID(),
             sa.ForeignKey("flow.id", ondelete="cascade"),
@@ -347,7 +343,7 @@ class ORMFlowRun(ORMRun):
         )
 
     @declared_attr
-    def deployment_id(cls):
+    def deployment_id(self):
         return sa.Column(
             UUID(), sa.ForeignKey("deployment.id", ondelete="set null"), index=True
         )
@@ -365,7 +361,7 @@ class ORMFlowRun(ORMRun):
     tags = sa.Column(JSON, server_default="[]", default=list, nullable=False)
 
     @declared_attr
-    def infrastructure_document_id(cls):
+    def infrastructure_document_id(self):
         return sa.Column(
             UUID,
             sa.ForeignKey("block_document.id", ondelete="CASCADE"),
@@ -374,7 +370,7 @@ class ORMFlowRun(ORMRun):
         )
 
     @declared_attr
-    def parent_task_run_id(cls):
+    def parent_task_run_id(self):
         return sa.Column(
             UUID(),
             sa.ForeignKey(
@@ -391,7 +387,7 @@ class ORMFlowRun(ORMRun):
 
     # TODO remove this foreign key for significant delete performance gains
     @declared_attr
-    def state_id(cls):
+    def state_id(self):
         return sa.Column(
             UUID(),
             sa.ForeignKey(
@@ -406,12 +402,12 @@ class ORMFlowRun(ORMRun):
 
     # current states are eagerly loaded unless otherwise specified
     @declared_attr
-    def _state(cls):
+    def _state(self):
         return sa.orm.relationship(
             "FlowRunState",
             lazy="joined",
-            foreign_keys=[cls.state_id],
-            primaryjoin="FlowRunState.id==%s.state_id" % cls.__name__,
+            foreign_keys=[self.state_id],
+            primaryjoin=f"FlowRunState.id=={self.__name__}.state_id",
         )
 
     @hybrid_property
@@ -441,30 +437,29 @@ class ORMFlowRun(ORMRun):
         self._state = state
 
     @declared_attr
-    def flow(cls):
+    def flow(self):
         return sa.orm.relationship("Flow", back_populates="flow_runs", lazy="raise")
 
     @declared_attr
-    def task_runs(cls):
+    def task_runs(self):
         return sa.orm.relationship(
             "TaskRun",
             back_populates="flow_run",
             lazy="raise",
-            # foreign_keys=lambda: [cls.flow_run_id],
-            primaryjoin="TaskRun.flow_run_id==%s.id" % cls.__name__,
+            primaryjoin=f"TaskRun.flow_run_id=={self.__name__}.id",
         )
 
     @declared_attr
-    def parent_task_run(cls):
+    def parent_task_run(self):
         return sa.orm.relationship(
             "TaskRun",
             back_populates="subflow_run",
             lazy="raise",
-            foreign_keys=lambda: [cls.parent_task_run_id],
+            foreign_keys=lambda: [self.parent_task_run_id],
         )
 
     @declared_attr
-    def __table_args__(cls):
+    def __table_args__(self):
         return (
             sa.Index(
                 "uq_flow_run__flow_id_idempotency_key",
@@ -504,7 +499,7 @@ class ORMTaskRun(ORMRun):
     """SQLAlchemy model of a task run."""
 
     @declared_attr
-    def flow_run_id(cls):
+    def flow_run_id(self):
         return sa.Column(
             UUID(),
             sa.ForeignKey("flow_run.id", ondelete="cascade"),
@@ -544,7 +539,7 @@ class ORMTaskRun(ORMRun):
 
     # TODO remove this foreign key for significant delete performance gains
     @declared_attr
-    def state_id(cls):
+    def state_id(self):
         return sa.Column(
             UUID(),
             sa.ForeignKey(
@@ -559,12 +554,12 @@ class ORMTaskRun(ORMRun):
 
     # current states are eagerly loaded unless otherwise specified
     @declared_attr
-    def _state(cls):
+    def _state(self):
         return sa.orm.relationship(
             "TaskRunState",
             lazy="joined",
-            foreign_keys=[cls.state_id],
-            primaryjoin="TaskRunState.id==%s.state_id" % cls.__name__,
+            foreign_keys=[self.state_id],
+            primaryjoin=f"TaskRunState.id=={self.__name__}.state_id",
         )
 
     @hybrid_property
@@ -594,27 +589,26 @@ class ORMTaskRun(ORMRun):
         self._state = state
 
     @declared_attr
-    def flow_run(cls):
+    def flow_run(self):
         return sa.orm.relationship(
             "FlowRun",
             back_populates="task_runs",
             lazy="raise",
-            foreign_keys=[cls.flow_run_id],
+            foreign_keys=[self.flow_run_id],
         )
 
     @declared_attr
-    def subflow_run(cls):
+    def subflow_run(self):
         return sa.orm.relationship(
             "FlowRun",
             back_populates="parent_task_run",
             lazy="raise",
-            # foreign_keys=["FlowRun.parent_task_run_id"],
-            primaryjoin="FlowRun.parent_task_run_id==%s.id" % cls.__name__,
+            primaryjoin=f"FlowRun.parent_task_run_id=={self.__name__}.id",
             uselist=False,
         )
 
     @declared_attr
-    def __table_args__(cls):
+    def __table_args__(self):
         return (
             sa.Index(
                 "uq_task_run__flow_run_id_task_key_dynamic_key",
@@ -661,7 +655,7 @@ class ORMDeployment:
     flow_data = sa.Column(Pydantic(schemas.data.DataDocument))
 
     @declared_attr
-    def flow_id(cls):
+    def flow_id(self):
         return sa.Column(
             UUID,
             sa.ForeignKey("flow.id", ondelete="CASCADE"),
@@ -678,7 +672,7 @@ class ORMDeployment:
     parameter_openapi_schema = sa.Column(JSON, default=dict, nullable=True)
 
     @declared_attr
-    def infrastructure_document_id(cls):
+    def infrastructure_document_id(self):
         return sa.Column(
             UUID,
             sa.ForeignKey("block_document.id", ondelete="CASCADE"),
@@ -687,7 +681,7 @@ class ORMDeployment:
         )
 
     @declared_attr
-    def storage_document_id(cls):
+    def storage_document_id(self):
         return sa.Column(
             UUID,
             sa.ForeignKey("block_document.id", ondelete="CASCADE"),
@@ -696,11 +690,11 @@ class ORMDeployment:
         )
 
     @declared_attr
-    def flow(cls):
+    def flow(self):
         return sa.orm.relationship("Flow", back_populates="deployments", lazy="raise")
 
     @declared_attr
-    def __table_args__(cls):
+    def __table_args__(self):
         return (
             sa.Index(
                 "uq_deployment__flow_id_name",
@@ -734,7 +728,7 @@ class ORMConcurrencyLimit:
     active_slots = sa.Column(JSON, server_default="[]", default=list, nullable=False)
 
     @declared_attr
-    def __table_args__(cls):
+    def __table_args__(self):
         return (sa.Index("uq_concurrency_limit__tag", "tag", unique=True),)
 
 
@@ -751,7 +745,7 @@ class ORMBlockType:
     )
 
     @declared_attr
-    def __table_args__(cls):
+    def __table_args__(self):
         return (
             sa.Index(
                 "uq_block_type__slug",
@@ -768,7 +762,7 @@ class ORMBlockSchema:
     capabilities = sa.Column(JSON, server_default="[]", default=list, nullable=False)
 
     @declared_attr
-    def block_type_id(cls):
+    def block_type_id(self):
         return sa.Column(
             UUID(),
             sa.ForeignKey("block_type.id", ondelete="cascade"),
@@ -777,11 +771,11 @@ class ORMBlockSchema:
         )
 
     @declared_attr
-    def block_type(cls):
+    def block_type(self):
         return sa.orm.relationship("BlockType", lazy="joined")
 
     @declared_attr
-    def __table_args__(cls):
+    def __table_args__(self):
         return (
             sa.Index(
                 "uq_block_schema__checksum",
@@ -797,7 +791,7 @@ class ORMBlockSchemaReference:
     name = sa.Column(sa.String, nullable=False)
 
     @declared_attr
-    def parent_block_schema_id(cls):
+    def parent_block_schema_id(self):
         return sa.Column(
             UUID(),
             sa.ForeignKey("block_schema.id", ondelete="cascade"),
@@ -805,7 +799,7 @@ class ORMBlockSchemaReference:
         )
 
     @declared_attr
-    def reference_block_schema_id(cls):
+    def reference_block_schema_id(self):
         return sa.Column(
             UUID(),
             sa.ForeignKey("block_schema.id", ondelete="cascade"),
@@ -820,7 +814,7 @@ class ORMBlockDocument:
     is_anonymous = sa.Column(sa.Boolean, server_default="0", index=True, nullable=False)
 
     @declared_attr
-    def block_type_id(cls):
+    def block_type_id(self):
         return sa.Column(
             UUID(),
             sa.ForeignKey("block_type.id", ondelete="cascade"),
@@ -828,11 +822,11 @@ class ORMBlockDocument:
         )
 
     @declared_attr
-    def block_type(cls):
+    def block_type(self):
         return sa.orm.relationship("BlockType", lazy="joined")
 
     @declared_attr
-    def block_schema_id(cls):
+    def block_schema_id(self):
         return sa.Column(
             UUID(),
             sa.ForeignKey("block_schema.id", ondelete="cascade"),
@@ -840,11 +834,11 @@ class ORMBlockDocument:
         )
 
     @declared_attr
-    def block_schema(cls):
+    def block_schema(self):
         return sa.orm.relationship("BlockSchema", lazy="joined")
 
     @declared_attr
-    def __table_args__(cls):
+    def __table_args__(self):
         return (
             sa.Index(
                 "uq_block__type_id_name",
@@ -876,7 +870,7 @@ class ORMBlockDocumentReference:
     name = sa.Column(sa.String, nullable=False)
 
     @declared_attr
-    def parent_block_document_id(cls):
+    def parent_block_document_id(self):
         return sa.Column(
             UUID(),
             sa.ForeignKey("block_document.id", ondelete="cascade"),
@@ -884,7 +878,7 @@ class ORMBlockDocumentReference:
         )
 
     @declared_attr
-    def reference_block_document_id(cls):
+    def reference_block_document_id(self):
         return sa.Column(
             UUID(),
             sa.ForeignKey("block_document.id", ondelete="cascade"),
@@ -898,7 +892,7 @@ class ORMConfiguration:
     value = sa.Column(JSON, nullable=False)
 
     @declared_attr
-    def __table_args__(cls):
+    def __table_args__(self):
         return (sa.UniqueConstraint("key"),)
 
 
@@ -915,7 +909,7 @@ class ORMSavedSearch:
     )
 
     @declared_attr
-    def __table_args__(cls):
+    def __table_args__(self):
         return (sa.UniqueConstraint("name"),)
 
 
@@ -939,7 +933,7 @@ class ORMWorkQueue:
     )
 
     @declared_attr
-    def __table_args__(cls):
+    def __table_args__(self):
         return (sa.UniqueConstraint("name"),)
 
 
@@ -950,7 +944,7 @@ class ORMAgent:
     name = sa.Column(sa.String, nullable=False)
 
     @declared_attr
-    def work_queue_id(cls):
+    def work_queue_id(self):
         return sa.Column(
             UUID,
             sa.ForeignKey("work_queue.id"),
@@ -966,7 +960,7 @@ class ORMAgent:
     )
 
     @declared_attr
-    def __table_args__(cls):
+    def __table_args__(self):
         return (sa.UniqueConstraint("name"),)
 
 
@@ -978,7 +972,7 @@ class ORMFlowRunNotificationPolicy:
     message_template = sa.Column(sa.String, nullable=True)
 
     @declared_attr
-    def block_document_id(cls):
+    def block_document_id(self):
         return sa.Column(
             UUID(),
             sa.ForeignKey("block_document.id", ondelete="cascade"),
@@ -986,11 +980,9 @@ class ORMFlowRunNotificationPolicy:
         )
 
     @declared_attr
-    def block_document(cls):
+    def block_document(self):
         return sa.orm.relationship(
-            "BlockDocument",
-            lazy="joined",
-            foreign_keys=[cls.block_document_id],
+            "BlockDocument", lazy="joined", foreign_keys=[self.block_document_id]
         )
 
 

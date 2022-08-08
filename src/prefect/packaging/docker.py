@@ -77,9 +77,8 @@ class DockerPackager(Packager):
 
     @validator("registry_url", pre=True)
     def ensure_registry_url_is_prefixed(cls, value):
-        if isinstance(value, str):
-            if "://" not in value:
-                return "https://" + value
+        if isinstance(value, str) and "://" not in value:
+            return f"https://{value}"
         return value
 
     async def package(self, flow: Flow) -> DockerPackageManifest:

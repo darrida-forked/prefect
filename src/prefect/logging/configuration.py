@@ -45,11 +45,10 @@ def load_logging_config(path: Path) -> dict:
     flat_config = dict_to_flatdict(config)
 
     for key_tup, val in flat_config.items():
-        env_val = os.environ.get(
+        if env_val := os.environ.get(
             # Generate a valid environment variable with nesting indicated with '_'
             to_envvar("PREFECT_LOGGING_" + "_".join(key_tup)).upper()
-        )
-        if env_val:
+        ):
             val = env_val
 
         # reassign the updated value
@@ -75,10 +74,10 @@ def setup_logging() -> None:
         # Do not allow repeated configuration calls, only warn if the config differs
         if PROCESS_LOGGING_CONFIG != config:
             warnings.warn(
-                "Logging can only be setup once per process, the new logging config "
-                f"will be ignored.",
+                'Logging can only be setup once per process, the new logging config will be ignored.',
                 stacklevel=2,
             )
+
         return
 
     logging.config.dictConfig(config)

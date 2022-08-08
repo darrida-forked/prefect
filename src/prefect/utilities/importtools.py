@@ -26,7 +26,7 @@ def to_qualified_name(obj: Any) -> str:
     Returns:
         str: the qualified name
     """
-    return obj.__module__ + "." + obj.__qualname__
+    return f"{obj.__module__}.{obj.__qualname__}"
 
 
 def from_qualified_name(name: str) -> Any:
@@ -220,8 +220,9 @@ class DelayedImportErrorModule(ModuleType):
         self.__frame_data = frame_data
         self.__help_message = (
             help_message
-            or f"Import errors for this module are only reported when used."
+            or "Import errors for this module are only reported when used."
         )
+
         super().__init__(*args, **kwargs)
 
     def __getattr__(self, attr):
@@ -260,21 +261,20 @@ def lazy_import(
     if spec is None:
         if error_on_import:
             raise ModuleNotFoundError(f"No module named '{name}'.\n{help_message}")
-        else:
-            try:
-                parent = inspect.stack()[1]
-                frame_data = {
-                    "spec": name,
-                    "filename": parent.filename,
-                    "lineno": parent.lineno,
-                    "function": parent.function,
-                    "code_context": parent.code_context,
-                }
-                return DelayedImportErrorModule(
-                    frame_data, help_message, "DelayedImportErrorModule"
-                )
-            finally:
-                del parent
+        try:
+            parent = inspect.stack()[1]
+            frame_data = {
+                "spec": name,
+                "filename": parent.filename,
+                "lineno": parent.lineno,
+                "function": parent.function,
+                "code_context": parent.code_context,
+            }
+            return DelayedImportErrorModule(
+                frame_data, help_message, "DelayedImportErrorModule"
+            )
+        finally:
+            del parent
 
     module = importlib.util.module_from_spec(spec)
     sys.modules[name] = module

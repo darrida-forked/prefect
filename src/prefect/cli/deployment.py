@@ -72,15 +72,16 @@ async def get_deployment(client, name, deployment_id):
             deployment = await client.read_deployment_by_name(name)
         except ObjectNotFound:
             exit_with_error(f"Deployment {name!r} not found!")
-    elif name is None and deployment_id is None:
+    elif name is None:
         exit_with_error("Must provide a deployed flow's name or id")
     else:
         exit_with_error("Only provide a deployed flow's name or id")
 
     if not deployment.manifest_path:
         exit_with_error(
-            f"This deployment has been deprecated. Please see https://orion-docs.prefect.io/concepts/deployments/ to learn how to create a deployment."
+            "This deployment has been deprecated. Please see https://orion-docs.prefect.io/concepts/deployments/ to learn how to create a deployment."
         )
+
 
     return deployment
 
@@ -417,11 +418,10 @@ async def build(
     try:
         fpath, obj_name = path.rsplit(":", 1)
     except ValueError as exc:
-        if str(exc) == "not enough values to unpack (expected 2, got 1)":
-            missing_flow_name_msg = f"Your flow path must include the name of the function that is the entrypoint to your flow.\nTry {path}:<flow_name> for your flow path."
-            exit_with_error(missing_flow_name_msg)
-        else:
+        if str(exc) != "not enough values to unpack (expected 2, got 1)":
             raise exc
+        missing_flow_name_msg = f"Your flow path must include the name of the function that is the entrypoint to your flow.\nTry {path}:<flow_name> for your flow path."
+        exit_with_error(missing_flow_name_msg)
     try:
         flow = import_object(path)
         if isinstance(flow, Flow):
@@ -483,13 +483,12 @@ async def build(
         infrastructure = template.copy(
             exclude={"_block_document_id", "_block_document_name", "_is_anonymous"}
         )
+    elif infra_type == Infra.kubernetes:
+        infrastructure = KubernetesJob()
+    elif infra_type == Infra.docker:
+        infrastructure = DockerContainer()
     else:
-        if infra_type == Infra.kubernetes:
-            infrastructure = KubernetesJob()
-        elif infra_type == Infra.docker:
-            infrastructure = DockerContainer()
-        else:
-            infrastructure = Process()
+        infrastructure = Process()
 
     description = getdoc(flow)
     schedule = None

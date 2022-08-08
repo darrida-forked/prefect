@@ -87,7 +87,7 @@ async def many_task_run_states(flow_run, session, db):
 class TestBase:
     async def test_repr(self, db, session, flow):
         assert repr(flow) == f"Flow(id={flow.id})"
-        assert repr(db.Flow()) == f"Flow(id=None)"
+        assert repr(db.Flow()) == "Flow(id=None)"
         flow_id = uuid4()
         assert repr(db.Flow(id=flow_id)) == f"Flow(id={flow_id})"
 
@@ -120,21 +120,20 @@ class TestFlowRun:
                 ),
                 isouter=True,
             )
-            .where(frs_alias.id == None)
+            .where(frs_alias.id is None)
         )
+
         result = await session.execute(query)
         objs = result.all()
 
         # assert that our handcrafted query picked up all the FINAL states
-        assert all([o[2] == schemas.states.StateType.COMPLETED for o in objs])
+        assert all(o[2] == schemas.states.StateType.COMPLETED for o in objs)
         # assert that the `state` relationship picked up all the FINAL states
-        assert all(
-            [o[0].state.type == schemas.states.StateType.COMPLETED for o in objs]
-        )
+        assert all(o[0].state.type == schemas.states.StateType.COMPLETED for o in objs)
         # assert that the `state` relationship picked up the correct state id
-        assert all([o[0].state.id == o[1] for o in objs])
+        assert all(o[0].state.id == o[1] for o in objs)
         # assert that the `state_id` stores the correct state id
-        assert all([o[0].state_id == o[1] for o in objs])
+        assert all(o[0].state_id == o[1] for o in objs)
 
     async def test_flow_run_state_relationship_query_matches_current_data(
         self, many_flow_run_states, session, db
@@ -269,21 +268,20 @@ class TestTaskRun:
                 ),
                 isouter=True,
             )
-            .where(frs_alias.id == None)
+            .where(frs_alias.id is None)
         )
+
         result = await session.execute(query)
         objs = result.all()
 
         # assert that our handcrafted query picked up all the FINAL states
-        assert all([o[3] == schemas.states.StateType.COMPLETED for o in objs])
+        assert all(o[3] == schemas.states.StateType.COMPLETED for o in objs)
         # assert that the `state` relationship picked up all the FINAL states
-        assert all(
-            [o[0].state.type == schemas.states.StateType.COMPLETED for o in objs]
-        )
+        assert all(o[0].state.type == schemas.states.StateType.COMPLETED for o in objs)
         # assert that the `state` relationship picked up the correct state id
-        assert all([o[0].state.id == o[1] for o in objs])
+        assert all(o[0].state.id == o[1] for o in objs)
         # assert that the `state_id` stores the correct state id
-        assert all([o[0].state_id == o[1] for o in objs])
+        assert all(o[0].state_id == o[1] for o in objs)
 
     async def test_task_run_state_relationship_query_matches_current_data(
         self, many_task_run_states, session, db

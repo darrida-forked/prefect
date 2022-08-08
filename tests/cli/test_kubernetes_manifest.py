@@ -22,7 +22,7 @@ def test_printing_the_orion_manifest():
     assert deployment["metadata"]["name"] == "orion"
 
     orion_container = deployment["spec"]["template"]["spec"]["containers"][0]
-    assert orion_container["command"][0:3] == ["prefect", "orion", "start"]
+    assert orion_container["command"][:3] == ["prefect", "orion", "start"]
 
 
 def test_printing_the_job_base_manifest():

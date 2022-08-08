@@ -108,11 +108,11 @@ def pytest_collection_modifyitems(session, config, items):
     """
     Update tests to skip in accordance with service requests
     """
-    exclude_all_services = config.getoption("--exclude-services")
-    if exclude_all_services:
+    if exclude_all_services := config.getoption("--exclude-services"):
         for item in items:
-            item_services = {mark.args[0] for mark in item.iter_markers(name="service")}
-            if item_services:
+            if item_services := {
+                mark.args[0] for mark in item.iter_markers(name="service")
+            }:
                 item.add_marker(
                     pytest.mark.skip(
                         "Excluding tests for services. This test requires service(s): "
@@ -123,8 +123,7 @@ def pytest_collection_modifyitems(session, config, items):
     exclude_services = set(config.getoption("--exclude-service"))
     for item in items:
         item_services = {mark.args[0] for mark in item.iter_markers(name="service")}
-        excluded_services = item_services.intersection(exclude_services)
-        if excluded_services:
+        if excluded_services := item_services.intersection(exclude_services):
             item.add_marker(
                 pytest.mark.skip(
                     "Excluding tests for service(s): "
@@ -132,8 +131,7 @@ def pytest_collection_modifyitems(session, config, items):
                 )
             )
 
-    only_run_service_tests = config.getoption("--only-services")
-    if only_run_service_tests:
+    if only_run_service_tests := config.getoption("--only-services"):
         for item in items:
             item_services = {mark.args[0] for mark in item.iter_markers(name="service")}
             if not item_services:
@@ -144,8 +142,7 @@ def pytest_collection_modifyitems(session, config, items):
                 )
         return
 
-    only_services = set(config.getoption("--only-service"))
-    if only_services:
+    if only_services := set(config.getoption("--only-service")):
         only_running_blurb = f"Only running tests for service(s): {', '.join(repr(s) for s in only_services)}."
         for item in items:
             item_services = {mark.args[0] for mark in item.iter_markers(name="service")}
@@ -160,9 +157,7 @@ def pytest_collection_modifyitems(session, config, items):
                 requires_blurb = "This test does not require a service."
 
             if not_in_only_services:
-                item.add_marker(
-                    pytest.mark.skip(only_running_blurb + " " + requires_blurb)
-                )
+                item.add_marker(pytest.mark.skip(f"{only_running_blurb} {requires_blurb}"))
         return
 
 
@@ -229,8 +224,7 @@ def assert_lifespan_is_not_left_open():
 
     yield
 
-    open_lifespans = APP_LIFESPANS.copy()
-    if open_lifespans:
+    if open_lifespans := APP_LIFESPANS.copy():
         # Clean out the lifespans to avoid erroring every future test
         APP_LIFESPANS.clear()
         raise RuntimeError(
@@ -376,10 +370,7 @@ async def generate_test_database_connection_url(
         finally:
             await connection.close()
 
-        new_url = urlunsplit((scheme, netloc, test_db_name, query, fragment))
-
-        yield new_url
-
+        yield urlunsplit((scheme, netloc, test_db_name, query, fragment))
         # Now drop the temporary database we created
         connection = await asyncpg.connect(postgres_url)
         try:

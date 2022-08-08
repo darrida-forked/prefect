@@ -128,7 +128,7 @@ def parameter_schema(fn: Callable) -> ParameterSchema:
     for param in signature.parameters.values():
         # Pydantic model creation will fail if names collide with the BaseModel type
         if hasattr(pydantic.BaseModel, param.name):
-            name = param.name + "__"
+            name = f"{param.name}__"
             aliases[name] = param.name
         else:
             name = param.name

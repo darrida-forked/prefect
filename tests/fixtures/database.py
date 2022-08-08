@@ -344,7 +344,7 @@ async def commit_task_run_state(
 ):
     if state_type is None:
         return None
-    state_details = dict() if state_details is None else state_details
+    state_details = {} if state_details is None else state_details
 
     new_state = schemas.states.State(
         type=state_type,
@@ -368,7 +368,7 @@ async def commit_flow_run_state(
 ):
     if state_type is None:
         return None
-    state_details = dict() if state_details is None else state_details
+    state_details = {} if state_details is None else state_details
 
     new_state = schemas.states.State(
         type=state_type,
@@ -390,15 +390,15 @@ async def commit_flow_run_state(
 @pytest.fixture
 def initialize_orchestration(flow):
     async def initializer(
-        session,
-        run_type,
-        initial_state_type,
-        proposed_state_type,
-        run_override=None,
-        run_tags=None,
-        initial_details=None,
-        proposed_details=None,
-    ):
+            session,
+            run_type,
+            initial_state_type,
+            proposed_state_type,
+            run_override=None,
+            run_tags=None,
+            initial_details=None,
+            proposed_details=None,
+        ):
         flow_run = await models.flow_runs.create_flow_run(
             session=session,
             flow_run=schemas.actions.FlowRunCreate(flow_id=flow.id, flow_version="0.1"),
@@ -432,7 +432,7 @@ def initialize_orchestration(flow):
             initial_details,
         )
 
-        proposed_details = proposed_details if proposed_details else dict()
+        proposed_details = proposed_details or {}
         if proposed_state_type is not None:
             psd = states.StateDetails(**proposed_details)
             proposed_state = states.State(type=proposed_state_type, state_details=psd)

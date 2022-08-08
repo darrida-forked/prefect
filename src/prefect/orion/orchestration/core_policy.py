@@ -104,7 +104,7 @@ class SecureTaskConcurrencySlots(BaseOrchestrationRule):
             if limit == 0:
                 # limits of 0 will deadlock, and the transition needs to abort
                 for stale_tag in self._applied_limits:
-                    stale_limit = run_limits.get(stale_tag, None)
+                    stale_limit = run_limits.get(stale_tag)
                     active_slots = set(stale_limit.active_slots)
                     active_slots.discard(str(context.run.id))
                     stale_limit.active_slots = list(active_slots)
@@ -115,7 +115,7 @@ class SecureTaskConcurrencySlots(BaseOrchestrationRule):
             elif len(cl.active_slots) >= limit:
                 # if the limit has already been reached, delay the transition
                 for stale_tag in self._applied_limits:
-                    stale_limit = run_limits.get(stale_tag, None)
+                    stale_limit = run_limits.get(stale_tag)
                     active_slots = set(stale_limit.active_slots)
                     active_slots.discard(str(context.run.id))
                     stale_limit.active_slots = list(active_slots)
@@ -167,7 +167,7 @@ class ReleaseTaskConcurrencySlots(BaseOrchestrationRule):
             )
         )
         run_limits = {limit.tag: limit for limit in filtered_limits}
-        for tag, cl in run_limits.items():
+        for cl in run_limits.values():
             active_slots = set(cl.active_slots)
             active_slots.discard(str(context.run.id))
             cl.active_slots = list(active_slots)
@@ -189,8 +189,7 @@ class CacheInsertion(BaseOrchestrationRule):
         context: TaskOrchestrationContext,
         db: OrionDBInterface,
     ) -> None:
-        cache_key = validated_state.state_details.cache_key
-        if cache_key:
+        if cache_key := validated_state.state_details.cache_key:
             new_cache_item = db.TaskRunStateCache(
                 cache_key=cache_key,
                 cache_expiration=validated_state.state_details.cache_expiration,
@@ -220,8 +219,7 @@ class CacheRetrieval(BaseOrchestrationRule):
         context: TaskOrchestrationContext,
         db: OrionDBInterface,
     ) -> None:
-        cache_key = proposed_state.state_details.cache_key
-        if cache_key:
+        if cache_key := proposed_state.state_details.cache_key:
             # Check for cached states matching the cache key
             cached_state_id = (
                 select(db.TaskRunStateCache.task_run_state_id)

@@ -96,19 +96,17 @@ def pydantic_subclass(
         )
     field_names.difference_update(excluded_fields)
 
-    # create a new class that inherits from `base` but only contains the specified
-    # pydantic __fields__
-    new_cls = type(
+    return type(
         name or base.__name__,
         (base,),
         {
             "__fields__": {
-                k: copy.copy(v) for k, v in base.__fields__.items() if k in field_names
+                k: copy.copy(v)
+                for k, v in base.__fields__.items()
+                if k in field_names
             }
         },
     )
-
-    return new_cls
 
 
 class PrefectBaseModel(BaseModel):
@@ -273,7 +271,7 @@ class PrefectBaseModel(BaseModel):
             A new copy of the model
         """
         if reset_fields:
-            update = update or dict()
+            update = update or {}
             for field in self._reset_fields():
                 update.setdefault(field, self.__fields__[field].get_default())
         return super().copy(update=update, **kwargs)

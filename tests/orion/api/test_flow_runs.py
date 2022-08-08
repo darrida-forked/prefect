@@ -485,9 +485,10 @@ class TestReadFlowRunGraph:
                     state=states.Completed(),
                     task_inputs=dict(x=[TaskRunResult(id=prev_tr.id)])
                     if prev_tr
-                    else dict(),
+                    else {},
                 )
             )
+
 
             prev_tr = tr
 
@@ -519,12 +520,7 @@ class TestReadFlowRunGraph:
 
         # Test that all task runs in the list have exactly one upstream dependency
         assert all(
-            len(
-                task_run["upstream_dependencies"]
-                if task_run["upstream_dependencies"]
-                else []
-            )
-            == 1
+            len(task_run["upstream_dependencies"] or []) == 1
             for task_run in task_runs
         )
 

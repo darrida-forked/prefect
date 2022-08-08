@@ -241,7 +241,7 @@ class FlowOrchestrationContext(OrchestrationContext):
             None
         """
 
-        for validation_attempt in range(2):
+        for _ in range(2):
             validation_errors = []
             try:
                 await self._validate_proposed_state()
@@ -378,7 +378,7 @@ class TaskOrchestrationContext(OrchestrationContext):
             None
         """
 
-        for validation_attempt in range(2):
+        for _ in range(2):
             validation_errors = []
             try:
                 await self._validate_proposed_state()
@@ -566,9 +566,7 @@ class BaseOrchestrationRule(contextlib.AbstractAsyncContextManager):
         will do nothing. Otherwise, `self.before_transition` will fire.
         """
 
-        if await self.invalid():
-            pass
-        else:
+        if not await self.invalid():
             entry_context = self.context.entry_context()
             await self.before_transition(*entry_context)
             self.context.rule_signature.append(str(self.__class__))
@@ -711,9 +709,7 @@ class BaseOrchestrationRule(contextlib.AbstractAsyncContextManager):
             True if the rule is fizzled, False otherwise.
         """
 
-        if self._invalid_on_entry:
-            return False
-        return await self.invalid_transition()
+        return False if self._invalid_on_entry else await self.invalid_transition()
 
     async def invalid_transition(self) -> bool:
         """

@@ -136,28 +136,21 @@ def test_setup_logging_uses_env_var_overrides(tmp_path, dictConfigMock, monkeypa
         {PREFECT_LOGGING_SETTINGS_PATH: tmp_path.joinpath("does-not-exist.yaml")}
     ):
         expected_config = load_logging_config(DEFAULT_LOGGING_SETTINGS_PATH)
-    env = {}
-
-    # Test setting a value for a simple key
-    env["PREFECT_LOGGING_HANDLERS_ORION_LEVEL"] = "ORION_LEVEL_VAL"
     expected_config["handlers"]["orion"]["level"] = "ORION_LEVEL_VAL"
 
-    # Test setting a value for the root logger
-    env["PREFECT_LOGGING_ROOT_LEVEL"] = "ROOT_LEVEL_VAL"
     expected_config["root"]["level"] = "ROOT_LEVEL_VAL"
 
-    # Test setting a value where the a key contains underscores
-    env["PREFECT_LOGGING_FORMATTERS_FLOW_RUNS_DATEFMT"] = "UNDERSCORE_KEY_VAL"
     expected_config["formatters"]["flow_runs"]["datefmt"] = "UNDERSCORE_KEY_VAL"
-
-    # Test setting a value where the key contains a period
-    env["PREFECT_LOGGING_LOGGERS_PREFECT_FLOW_RUNS_LEVEL"] = "FLOW_RUN_VAL"
 
     expected_config["loggers"]["prefect.flow_runs"]["level"] = "FLOW_RUN_VAL"
 
-    # Test setting a value that does not exist in the yaml config and should not be
-    # set in the expected_config since there is no value to override
-    env["PREFECT_LOGGING_FOO"] = "IGNORED"
+    env = {
+        "PREFECT_LOGGING_HANDLERS_ORION_LEVEL": "ORION_LEVEL_VAL",
+        "PREFECT_LOGGING_ROOT_LEVEL": "ROOT_LEVEL_VAL",
+        "PREFECT_LOGGING_FORMATTERS_FLOW_RUNS_DATEFMT": "UNDERSCORE_KEY_VAL",
+        "PREFECT_LOGGING_LOGGERS_PREFECT_FLOW_RUNS_LEVEL": "FLOW_RUN_VAL",
+        "PREFECT_LOGGING_FOO": "IGNORED",
+    }
 
     for var, value in env.items():
         monkeypatch.setenv(var, value)
@@ -208,11 +201,7 @@ async def test_flow_run_respects_extra_loggers(orion_client, logger_test_deploym
 
 @pytest.mark.parametrize("name", ["default", None, ""])
 def test_get_logger_returns_prefect_logger_by_default(name):
-    if name == "default":
-        logger = get_logger()
-    else:
-        logger = get_logger(name)
-
+    logger = get_logger() if name == "default" else get_logger(name)
     assert logger.name == "prefect"
 
 
@@ -639,7 +628,7 @@ class TestOrionLogWorker:
                 )
                 == log_json
             )
-        assert len(set(log.message for log in logs)) == count, "Each log is unique"
+        assert len({log.message for log in logs}) == count, "Each log is unique"
 
     async def test_send_logs_retries_on_next_call_on_exception(
         self, log_json, orion_client, monkeypatch, capsys, worker

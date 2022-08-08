@@ -22,10 +22,7 @@ def flaky_on_windows(fn, **kwargs):
     """
     Mark a test as flaky for repeated test runs if on Windows.
     """
-    if sys.platform == "win32":
-        return pytest.mark.flaky(**kwargs)(fn)
-    else:
-        return fn
+    return pytest.mark.flaky(**kwargs)(fn) if sys.platform == "win32" else fn
 
 
 def exceptions_equal(a, b):

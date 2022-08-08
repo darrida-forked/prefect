@@ -40,21 +40,21 @@ async def hosted_orion_api():
 
     # Will connect to the same database as normal test clients
     async with open_process(
-        command=[
-            "uvicorn",
-            "--factory",
-            "prefect.orion.api.server:create_app",
-            "--host",
-            "127.0.0.1",
-            "--port",
-            str(port),
-            "--log-level",
-            "info",
-        ],
-        stdout=sys.stdout,
-        stderr=sys.stderr,
-        env={**os.environ, **get_current_settings().to_environment_variables()},
-    ) as process:
+            command=[
+                "uvicorn",
+                "--factory",
+                "prefect.orion.api.server:create_app",
+                "--host",
+                "127.0.0.1",
+                "--port",
+                str(port),
+                "--log-level",
+                "info",
+            ],
+            stdout=sys.stdout,
+            stderr=sys.stderr,
+            env={**os.environ, **get_current_settings().to_environment_variables()},
+        ) as process:
 
         api_url = f"http://localhost:{port}/api"
 
@@ -64,7 +64,7 @@ async def hosted_orion_api():
             with anyio.move_on_after(20):
                 while True:
                     try:
-                        response = await client.get(api_url + "/health")
+                        response = await client.get(f"{api_url}/health")
                     except httpx.ConnectError:
                         pass
                     else:

@@ -12,8 +12,7 @@ from prefect.orion import schemas
 async def get_fernet_encryption(session):
     from prefect.orion.models import configuration
 
-    environment_key = os.getenv("ORION_ENCRYPTION_KEY")
-    if environment_key:
+    if environment_key := os.getenv("ORION_ENCRYPTION_KEY"):
         return Fernet(environment_key.encode())
 
     configured_key = await configuration.read_configuration(session, "ENCRYPTION_KEY")

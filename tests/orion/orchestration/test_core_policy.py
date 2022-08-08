@@ -167,12 +167,7 @@ class TestCachingBackendLogic:
         assert ctx2.response_status == expected_status
         assert ctx2.validated_state.name == expected_name
 
-    @pytest.mark.parametrize(
-        "proposed_state_type",
-        # Include all state types but COMPLETED; cast to sorted list for determinism
-        list(sorted(set(states.StateType) - set([states.StateType.COMPLETED]))),
-        ids=lambda statetype: statetype.name,
-    )
+    @pytest.mark.parametrize("proposed_state_type", list(sorted(set(states.StateType) - {states.StateType.COMPLETED})), ids=lambda statetype: statetype.name)
     async def test_only_cache_completed_states(
         self,
         session,

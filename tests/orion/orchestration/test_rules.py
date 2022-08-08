@@ -37,7 +37,7 @@ async def commit_task_run_state(
 ):
     if state_type is None:
         return None
-    state_details = dict() if state_details is None else state_details
+    state_details = {} if state_details is None else state_details
 
     if (
         state_type == states.StateType.SCHEDULED

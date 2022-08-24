@@ -1,6 +1,9 @@
 from typing import Tuple, Optional
 
 """
+Referenced for a starting point: https://stackoverflow.com/questions/42115777/parsing-docker-image-tag-into-component-parts
+- as suggested by @madkinsz in https://github.com/PrefectHQ/prefect/pull/6477#discussion_r950203212
+
 // splitReposSearchTerm breaks a search term into an index name and remote name
 func splitReposSearchTerm(reposName string) (string, string) {
         nameParts := strings.SplitN(reposName, "/", 2)
